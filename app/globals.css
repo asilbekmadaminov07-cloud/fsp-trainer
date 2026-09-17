@@ -195,3 +195,58 @@ select.case-select{font-size:13px;padding:7px 10px;border-radius:6px;border:1px 
 .img-credit a{color:var(--muted);text-decoration:underline}
 .next-case-btn{border:1px solid var(--line);background:var(--card);border-radius:6px;padding:8px 13px;font-size:13px;font-weight:500;cursor:pointer;color:var(--muted);white-space:nowrap}
 .next-case-btn:hover{border-color:var(--brand);color:var(--brand)}
+
+/* ---- Prüfung (20 savolli imtihon) ---- */
+.exam-cta{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin:16px 20px 20px;padding:14px 16px;border:1px solid var(--brand);background:var(--brand-tint);border-radius:9px}
+.exam-cta-text{display:flex;flex-direction:column;gap:3px;font-size:13px;color:var(--brand-dark);max-width:52ch}
+.exam-cta-text span{color:var(--muted);font-size:12.5px;line-height:1.45}
+
+.quiz-box{padding:18px 20px 22px}
+.quiz-loading{display:flex;flex-direction:column;gap:6px;align-items:center;justify-content:center;min-height:160px;font-size:14px;font-style:italic;color:var(--muted);text-align:center}
+.quiz-sub{font-size:12px;font-style:normal}
+.quiz-head{display:flex;align-items:center;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:8px}
+.quiz-lives{letter-spacing:3px;color:var(--mark);font-size:13px}
+.quiz-bar{height:3px;background:var(--line);border-radius:2px;overflow:hidden;margin-bottom:16px}
+.quiz-bar span{display:block;height:100%;background:var(--brand);transition:width .25s ease}
+.quiz-topic{font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:6px}
+.quiz-q{font-family:var(--serif);font-size:18px;line-height:1.4;margin-bottom:16px}
+
+.quiz-options{display:flex;flex-direction:column;gap:8px}
+.quiz-opt{display:flex;align-items:flex-start;gap:10px;text-align:left;padding:12px 14px;border:1px solid var(--line);background:var(--card);border-radius:8px;font-size:14.5px;line-height:1.45;cursor:pointer;color:var(--ink)}
+.quiz-opt:hover:not(:disabled){border-color:var(--brand)}
+.quiz-opt:disabled{cursor:default}
+.quiz-opt.sel{border-color:var(--brand);background:var(--brand-tint)}
+.quiz-opt.right{border-color:var(--easy);background:var(--easy-tint);color:var(--easy)}
+.quiz-opt.wrong{border-color:var(--mark);background:var(--mark-tint);color:var(--mark)}
+.quiz-letter{flex:0 0 auto;font-family:monospace;font-size:12px;font-weight:600;opacity:.65;padding-top:2px}
+
+.quiz-feedback{margin-top:14px;padding:12px 14px;border-radius:8px;font-size:14px;line-height:1.5}
+.quiz-feedback.ok{background:var(--easy-tint);color:var(--easy)}
+.quiz-feedback.bad{background:var(--mark-tint);color:var(--mark)}
+
+.quiz-actions{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
+.quiz-btn{border:1px solid var(--brand);background:var(--brand);color:#fff;border-radius:7px;padding:11px 20px;font-size:14px;font-weight:500;cursor:pointer;min-height:44px}
+.quiz-btn:hover:not(:disabled){background:var(--brand-dark)}
+.quiz-btn:disabled{opacity:.45;cursor:default}
+.quiz-btn.ghost{background:transparent;color:var(--muted);border-color:var(--line)}
+.quiz-btn.ghost:hover{border-color:var(--brand);color:var(--brand);background:transparent}
+
+.quiz-verdict{font-family:var(--serif);font-size:22px;font-weight:600;margin-bottom:10px}
+.quiz-verdict.passed{color:var(--easy)}
+.quiz-verdict.failed{color:var(--mark)}
+.quiz-note{font-size:13.5px;color:var(--muted);line-height:1.55;margin-bottom:14px}
+
+.quiz-mistakes{display:flex;flex-direction:column;gap:12px}
+.quiz-mistake{border:1px solid var(--line);border-left:3px solid var(--mark);border-radius:7px;padding:12px 14px;background:var(--paper)}
+.qm-nr{font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:4px}
+.qm-q{font-size:14px;font-weight:500;margin-bottom:8px;line-height:1.45}
+.qm-line{font-size:13.5px;line-height:1.5}
+.qm-line.bad{color:var(--mark)}
+.qm-line.good{color:var(--easy)}
+.qm-exp{margin-top:8px;font-size:13px;color:var(--muted);line-height:1.55}
+
+@media(max-width:560px){
+  .quiz-q{font-size:16.5px}
+  .exam-cta{flex-direction:column;align-items:stretch}
+  .exam-cta .quiz-btn{width:100%}
+}

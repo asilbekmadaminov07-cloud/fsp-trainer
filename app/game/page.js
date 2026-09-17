@@ -3,11 +3,12 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { CASES, DIFFS, DIFF_REWARDS, IMAGES, COMMON_PATIENT_INSTRUCTIONS } from '@/lib/cases';
-import { levelFromXp } from '@/lib/career';
+import { levelFromXp, careerStage } from '@/lib/career';
 import {
   speakNatural, stopSpeaking, pickVoice,
   unlockAudio, hasSpeechRecognition, hasRecorder, startRecording, transcribeAudio
 } from '@/lib/voice';
+import Quiz from './Quiz';
 
 // Befund rasmi: agar holatga Commons fayli biriktirilgan bo'lsa, uni jonli olib keladi
 // (atribut bilan — CC litsenziyasi talabi). Aks holda sxematik SVG chizma ko'rsatiladi.
@@ -73,6 +74,7 @@ export default function Game() {
   const [recording, setRecording] = useState(false);
   const [transcribing, setTranscribing] = useState(false);
   const [voiceError, setVoiceError] = useState('');
+  const [showQuiz, setShowQuiz] = useState(false);
 
   const bodyRef = useRef(null);
   const recognitionRef = useRef(null);
@@ -223,6 +225,7 @@ export default function Game() {
   }
 
   function resetCase(idx){
+    setShowQuiz(false);
     setCurrentCaseIdx(idx);
     const c = CASES.filter(x => x.difficulty === currentDiff)[idx];
     setEvalResult(null);
@@ -385,6 +388,40 @@ export default function Game() {
     }
   }
 
+  // Imtihon o'tilganda: asosiy mukofot va martaba shu yerda beriladi
+  async function handleQuizPassed(score, total){
+    const prof = stateRef.current.profile;
+    const diff = stateRef.current.currentDiff;
+    if (!prof) return null;
+    const base = DIFF_REWARDS[diff] || DIFF_REWARDS.leicht;
+    const mult = score === total ? 3 : 2;          // 20/20 uchun ko'proq
+    const xp = base.xp * mult;
+    const coins = base.coins * mult;
+    const oldLevel = levelFromXp(prof.xp || 0);
+    const newXp = (prof.xp || 0) + xp;
+    const newLevel = levelFromXp(newXp);
+    const { data: updated } = await supabase
+      .from('profiles')
+      .update({
+        xp: newXp,
+        coins: (prof.coins || 0) + coins,
+        level: newLevel,
+        cases_solved: (prof.cases_solved || 0) + 1
+      })
+      .eq('id', prof.id)
+      .select()
+      .single();
+    if (updated) setProfile(updated);
+    return { xp, coins, levelUp: newLevel > oldLevel, title: careerStage(newLevel).title };
+  }
+
+  function quizTranscript(){
+    return (stateRef.current.history || [])
+      .filter(m => m.type !== 'image')
+      .map(m => (m.role === 'user' ? 'Arzt/Ärztin: ' : 'Patient/in: ') + m.content)
+      .join('\n');
+  }
+
   function getEval(){
     if (!diagInput.trim()) { setDiagError(true); return; }
     setDiagError(false);
@@ -465,6 +502,15 @@ export default function Game() {
               </button>
             </div>
 
+            {showQuiz ? (
+              <Quiz
+                currentCase={currentCase}
+                transcript={quizTranscript()}
+                onPassed={handleQuizPassed}
+                onClose={() => { setShowQuiz(false); newCase(); }}
+              />
+            ) : (
+            <>
             {voiceMode !== 'none' && (
               <div className="voice-bar">
                 <button className={'voice-toggle' + (voiceActive ? ' on' : '')} onClick={toggleVoiceMode}>
@@ -559,6 +605,18 @@ export default function Game() {
                   </>
                 )}
               </div>
+            )}
+
+            {evalResult && !evalLoading && (
+              <div className="exam-cta">
+                <div className="exam-cta-text">
+                  <b>Prüfung ({'20'} Fragen)</b>
+                  <span>Bei {'3'} Fehlern endet die Prüfung und beginnt mit neuen Fragen von vorne. Nur ab 18 richtigen Antworten steigen Sie auf.</span>
+                </div>
+                <button className="quiz-btn" onClick={() => setShowQuiz(true)}>Prüfung starten</button>
+              </div>
+            )}
+            </>
             )}
           </div>
         )}
