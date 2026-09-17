@@ -9,6 +9,45 @@ import {
   unlockAudio, hasSpeechRecognition, hasRecorder, startRecording, transcribeAudio
 } from '@/lib/voice';
 
+// Befund rasmi: agar holatga Commons fayli biriktirilgan bo'lsa, uni jonli olib keladi
+// (atribut bilan — CC litsenziyasi talabi). Aks holda sxematik SVG chizma ko'rsatiladi.
+function CaseImage({ imageKey, commonsFile }) {
+  const [info, setInfo] = useState(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    if (!commonsFile) { setFailed(true); return; }
+    let alive = true;
+    setInfo(null);
+    setFailed(false);
+    fetch('/api/case-image?file=' + encodeURIComponent(commonsFile))
+      .then(r => r.ok ? r.json() : Promise.reject(new Error('nicht verfügbar')))
+      .then(d => { if (alive) setInfo(d); })
+      .catch(() => { if (alive) setFailed(true); });
+    return () => { alive = false; };
+  }, [commonsFile]);
+
+  if (failed || (!info && !commonsFile)) {
+    return (
+      <div className="img-frame" dangerouslySetInnerHTML={{ __html: IMAGES[imageKey] || '' }} />
+    );
+  }
+  if (!info) {
+    return <div className="img-frame img-loading">Befundbild wird geladen…</div>;
+  }
+  return (
+    <>
+      <div className="img-frame">
+        <img src={info.url} alt="Befundbild" onError={() => setFailed(true)} />
+      </div>
+      <div className="img-credit">
+        {info.artist ? info.artist + ' · ' : ''}{info.license}
+        {info.source && <> · <a href={info.source} target="_blank" rel="noreferrer">Quelle</a></>}
+      </div>
+    </>
+  );
+}
+
 export default function Game() {
   const router = useRouter();
   const [profile, setProfile] = useState(null);
@@ -42,6 +81,7 @@ export default function Game() {
   const busyRef = useRef(false);     // hozir bir "navbat" qayta ishlanyaptimi (javob kutish/gapirish)
   const stateRef = useRef({});       // eng so'nggi state'ga callback ichidan kirish uchun
   const caseVoiceRef = useRef(pickVoice());
+  const seenRef = useRef({});    // har daraja uchun allaqachon ko'rilgan holatlar
 
   const casesForDiff = CASES.filter(c => c.difficulty === currentDiff);
   const currentCase = casesForDiff[currentCaseIdx] || casesForDiff[0];
@@ -109,7 +149,8 @@ export default function Game() {
   }, [router]);
 
   useEffect(() => {
-    resetCase(0);
+    // Yangi darajaga o'tilganda (va sahifa birinchi ochilganda) bemor tasodifiy tanlanadi
+    resetCase(pickRandomIdx(currentDiff, -1));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentDiff]);
 
@@ -159,6 +200,26 @@ export default function Game() {
     setSpeaking(true);
     await speakNatural(text, caseVoiceRef.current);
     setSpeaking(false);
+  }
+
+  // Bemor tasodifiy tanlanadi. Barcha holatlar aylanib chiqilmaguncha takrorlanmaydi.
+  function pickRandomIdx(diff, currentIdx){
+    const pool = CASES.filter(c => c.difficulty === diff);
+    if (pool.length <= 1) return 0;
+    if (!seenRef.current[diff]) seenRef.current[diff] = [];
+    const seen = seenRef.current[diff];
+    let avail = pool.map((_, i) => i).filter(i => !seen.includes(i) && i !== currentIdx);
+    if (!avail.length) {
+      seenRef.current[diff] = [];
+      avail = pool.map((_, i) => i).filter(i => i !== currentIdx);
+    }
+    const idx = avail[Math.floor(Math.random() * avail.length)];
+    seenRef.current[diff].push(idx);
+    return idx;
+  }
+
+  function newCase(){
+    resetCase(pickRandomIdx(currentDiff, currentCaseIdx));
   }
 
   function resetCase(idx){
@@ -233,7 +294,7 @@ export default function Game() {
     setHistory(h => [
       ...h,
       { role: 'user', content: `Könnten Sie mir bitte ${c.imageLabel === 'Foto' ? 'ein Foto' : 'ein Röntgenbild'} schicken?` },
-      { role: 'assistant', type: 'image', imageKey: c.imageKey, displayCaption: c.imageCaption, content: c.imageContent }
+      { role: 'assistant', type: 'image', imageKey: c.imageKey, commonsFile: c.commonsFile, displayCaption: c.imageCaption, content: c.imageContent }
     ]);
   }
 
@@ -399,9 +460,9 @@ export default function Game() {
                   </div>
                 </div>
               </div>
-              <select className="case-select" value={currentCaseIdx} onChange={e => resetCase(parseInt(e.target.value, 10))}>
-                {casesForDiff.map((c, i) => <option key={c.name} value={i}>{c.name}</option>)}
-              </select>
+              <button className="next-case-btn" onClick={newCase} title="Neuer Patient aus dieser Schwierigkeitsstufe">
+                Nächster Patient →
+              </button>
             </div>
 
             {voiceMode !== 'none' && (
@@ -442,16 +503,7 @@ export default function Game() {
                   return (
                     <div className="msg patient msg-image" key={i}>
                       {m.displayCaption && <div className="img-caption">{m.displayCaption}</div>}
-                      <div className="img-frame">
-                        <img
-                          src={`/images/${m.imageKey}.png`}
-                          alt="Befundbild"
-                          onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.parentElement.innerHTML = IMAGES[m.imageKey] || '';
-                          }}
-                        />
-                      </div>
+                      <CaseImage imageKey={m.imageKey} commonsFile={m.commonsFile} />
                     </div>
                   );
                 }

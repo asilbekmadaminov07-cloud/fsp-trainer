@@ -20,3 +20,12 @@ yarn-error.log*
 
 # Vercel
 .vercel
+
+# tekshiruv uchun vaqtinchalik rasmlar
+/_preview/
+
+# skript natijalari (vaqtinchalik, GitHub uchun emas)
+/nomzodlar.txt
+/qidiruv.txt
+/topilganlar.txt
+/karies.txt

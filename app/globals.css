@@ -190,3 +190,8 @@ select.case-select{font-size:13px;padding:7px 10px;border-radius:6px;border:1px 
 .lb-rank{width:20px;font-family:monospace;color:var(--muted);font-size:13px}
 .lb-name{flex:1;font-weight:500}
 .lb-xp{color:var(--muted);font-size:13px}
+.img-loading{display:flex;align-items:center;justify-content:center;min-height:120px;font-size:12.5px;font-style:italic;color:var(--muted)}
+.img-credit{margin-top:4px;font-size:11px;color:var(--muted);line-height:1.4}
+.img-credit a{color:var(--muted);text-decoration:underline}
+.next-case-btn{border:1px solid var(--line);background:var(--card);border-radius:6px;padding:8px 13px;font-size:13px;font-weight:500;cursor:pointer;color:var(--muted);white-space:nowrap}
+.next-case-btn:hover{border-color:var(--brand);color:var(--brand)}
