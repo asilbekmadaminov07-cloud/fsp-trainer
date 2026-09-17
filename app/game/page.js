@@ -4,7 +4,10 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { CASES, DIFFS, DIFF_REWARDS, IMAGES, COMMON_PATIENT_INSTRUCTIONS } from '@/lib/cases';
 import { levelFromXp } from '@/lib/career';
-import { speakNatural, stopSpeaking, pickVoice } from '@/lib/voice';
+import {
+  speakNatural, stopSpeaking, pickVoice,
+  unlockAudio, hasSpeechRecognition, hasRecorder, startRecording, transcribeAudio
+} from '@/lib/voice';
 
 export default function Game() {
   const router = useRouter();
@@ -24,10 +27,17 @@ export default function Game() {
   const [voiceActive, setVoiceActive] = useState(false);
   const [listening, setListening] = useState(false);
   const [speaking, setSpeaking] = useState(false);
-  const [speechSupported, setSpeechSupported] = useState(true);
+  // 'sr'  — uzluksiz nutq-tanish (Chrome/Edge, kompyuter va Android)
+  // 'ptt' — tugmani bosib gapirish: ovoz yozib olinib, serverda matnga aylantiriladi (iPhone/iOS, Safari)
+  // 'none'— ovoz umuman ishlamaydi, faqat matn
+  const [voiceMode, setVoiceMode] = useState('sr');
+  const [recording, setRecording] = useState(false);
+  const [transcribing, setTranscribing] = useState(false);
+  const [voiceError, setVoiceError] = useState('');
 
   const bodyRef = useRef(null);
   const recognitionRef = useRef(null);
+  const recorderRef = useRef(null);
   const activeRef = useRef(false);   // foydalanuvchi uzluksiz rejimni yoqganmi
   const busyRef = useRef(false);     // hozir bir "navbat" qayta ishlanyaptimi (javob kutish/gapirish)
   const stateRef = useRef({});       // eng so'nggi state'ga callback ichidan kirish uchun
@@ -44,8 +54,13 @@ export default function Game() {
 
   // Mikrofon (nutqni tanish) ni bir marta sozlaymiz
   useEffect(() => {
-    const SR = typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition);
-    if (!SR) { setSpeechSupported(false); return; }
+    if (!hasSpeechRecognition()) {
+      // iOS/Safari: nutq-tanish yo'q — "bosib gapirish" rejimiga o'tamiz
+      setVoiceMode(hasRecorder() ? 'ptt' : 'none');
+      return;
+    }
+    setVoiceMode('sr');
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     const rec = new SR();
     rec.lang = 'de-DE';
     rec.interimResults = false;
@@ -103,7 +118,41 @@ export default function Game() {
   }, [history]);
 
   function restartListening(){
+    if (!recognitionRef.current) return; // 'ptt' rejimida avtomatik tinglash yo'q
     try { recognitionRef.current.start(); setListening(true); } catch (e) { /* allaqachon ishlayapti */ }
+  }
+
+  // --- "Bosib gapirish" (iPhone/iOS) ---
+  async function toggleRecording(){
+    setVoiceError('');
+    if (recording) {
+      const r = recorderRef.current;
+      recorderRef.current = null;
+      setRecording(false);
+      if (!r) return;
+      setTranscribing(true);
+      try {
+        const payload = await r.stop();
+        const text = await transcribeAudio(payload);
+        setTranscribing(false);
+        if (!text) { setVoiceError('Nichts verstanden — bitte noch einmal sprechen.'); return; }
+        busyRef.current = true;
+        await handleVoiceTurn(text);
+      } catch (e) {
+        setTranscribing(false);
+        setVoiceError('Spracherkennung fehlgeschlagen. Bitte erneut versuchen.');
+      }
+      return;
+    }
+    // yozishni boshlash
+    stopSpeaking();
+    setSpeaking(false);
+    try {
+      recorderRef.current = await startRecording();
+      setRecording(true);
+    } catch (e) {
+      setVoiceError('Kein Mikrofonzugriff. Bitte in den Einstellungen erlauben.');
+    }
   }
 
   async function speak(text){
@@ -242,16 +291,18 @@ export default function Game() {
       const rest = lines.slice(1).join('\n').trim();
 
       let reward = null;
-      if (verdict === 'richtig' && profile) {
-        const r = DIFF_REWARDS[currentDiff];
-        const newXp = (profile.xp || 0) + r.xp;
-        const newCoins = (profile.coins || 0) + r.coins;
+      if (verdict === 'richtig' && prof) {
+        // MUHIM: ovozli rejimda bu funksiya "eski" closure ichidan chaqiriladi,
+        // shuning uchun profil va qiyinlik darajasini stateRef'dan olamiz.
+        const r = DIFF_REWARDS[stateRef.current.currentDiff];
+        const newXp = (prof.xp || 0) + r.xp;
+        const newCoins = (prof.coins || 0) + r.coins;
         const newLevel = levelFromXp(newXp);
-        const newCasesSolved = (profile.cases_solved || 0) + 1;
+        const newCasesSolved = (prof.cases_solved || 0) + 1;
         const { data: updated } = await supabase
           .from('profiles')
           .update({ xp: newXp, coins: newCoins, level: newLevel, cases_solved: newCasesSolved })
-          .eq('id', profile.id)
+          .eq('id', prof.id)
           .select()
           .single();
         if (updated) setProfile(updated);
@@ -285,9 +336,15 @@ export default function Game() {
       setVoiceActive(false);
       stopSpeaking();
       try { recognitionRef.current?.stop(); } catch (e) {}
+      if (recorderRef.current) { recorderRef.current.cancel(); recorderRef.current = null; }
+      setRecording(false);
+      setTranscribing(false);
       setListening(false);
       setSpeaking(false);
     } else {
+      // MUHIM: iPhone'da audio faqat foydalanuvchi tegib turgan payt ochiladi.
+      unlockAudio();
+      setVoiceError('');
       activeRef.current = true;
       setVoiceActive(true);
       busyRef.current = true;
@@ -347,19 +404,35 @@ export default function Game() {
               </select>
             </div>
 
-            {speechSupported && (
+            {voiceMode !== 'none' && (
               <div className="voice-bar">
                 <button className={'voice-toggle' + (voiceActive ? ' on' : '')} onClick={toggleVoiceMode}>
                   {voiceActive ? '🎙️ Sprachgespräch: Aktiv' : '🎙️ Sprachgespräch starten'}
                 </button>
+
+                {voiceActive && voiceMode === 'ptt' && (
+                  <button
+                    className={'talk-btn' + (recording ? ' rec' : '')}
+                    onClick={toggleRecording}
+                    disabled={transcribing || speaking}
+                  >
+                    {recording ? '⏹ Fertig' : '🎤 Sprechen'}
+                  </button>
+                )}
+
                 {speaking && <span className="voice-status">Patient spricht…</span>}
+                {recording && <span className="voice-status listening">● Aufnahme läuft…</span>}
+                {transcribing && <span className="voice-status">Wird verstanden…</span>}
                 {listening && <span className="voice-status listening">● Ich höre zu…</span>}
-                {voiceActive && !speaking && !listening && <span className="voice-status">Einen Moment…</span>}
+                {voiceActive && voiceMode === 'sr' && !speaking && !listening && <span className="voice-status">Einen Moment…</span>}
               </div>
             )}
             {voiceActive && (
               <div className="voice-hint">
-                Sagen Sie z. B. „Können Sie mir ein Röntgenbild schicken?" oder „Meine Diagnose ist …" — das Gespräch läuft ohne Tastendruck weiter.
+                {voiceMode === 'ptt'
+                  ? 'Tippen Sie auf „Sprechen", sprechen Sie auf Deutsch, und tippen Sie danach auf „Fertig". Z. B. „Können Sie mir ein Röntgenbild schicken?" oder „Meine Diagnose ist …"'
+                  : 'Sagen Sie z. B. „Können Sie mir ein Röntgenbild schicken?" oder „Meine Diagnose ist …" — das Gespräch läuft ohne Tastendruck weiter.'}
+                {voiceError && <span className="error-text" style={{ display: 'block', marginTop: 6 }}>{voiceError}</span>}
               </div>
             )}
 
