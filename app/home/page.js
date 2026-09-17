@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
-import { levelFromXp, careerStage, WELCOME_LINES, speakText } from '@/lib/career';
+import { levelFromXp, careerStage } from '@/lib/career';
 
 const ACHIEVEMENTS = [
   { id: 'first_case', title: 'Erste Diagnose bestanden', need: 1 },
@@ -11,13 +11,44 @@ const ACHIEVEMENTS = [
   { id: 'fifty_cases', title: '50 Fälle gelöst', need: 50 }
 ];
 
+const TOOLS = [
+  {
+    href: '/game', icon: '🦷', name: 'Patientengespräch',
+    desc: 'Anamnese erheben, Röntgenbild anfordern, Diagnose stellen — danach 20 Prüfungsfragen zum Fall.',
+    tag: 'Teil 1 · Kernübung'
+  },
+  {
+    href: '/tools/befund', icon: '🩻', name: 'Befund-Training',
+    desc: 'Echte Röntgenbilder befunden. Ihre Beschreibung wird gegen den tatsächlichen Befund geprüft.',
+    tag: 'Röntgen lesen'
+  },
+  {
+    href: '/tools/arztbrief', icon: '✍️', name: 'Arztbrief',
+    desc: 'Den schriftlichen Teil üben. Bewertung nach Struktur, Fachsprache, Vollständigkeit und Grammatik.',
+    tag: 'Teil 2 · Schriftlich'
+  },
+  {
+    href: '/tools/kollege', icon: '👨‍⚕️', name: 'Arzt-Arzt-Gespräch',
+    desc: 'Den Fall einem Oberarzt vorstellen. Er hakt nach, sobald etwas fehlt oder zu umgangssprachlich klingt.',
+    tag: 'Teil 3 · Fallübergabe'
+  },
+  {
+    href: '/tools/fachbegriffe', icon: '📇', name: 'Fachbegriffe',
+    desc: 'Fachwort auf der einen Seite, Patientensprache auf der anderen. Karten drehen sich, Sätze inklusive.',
+    tag: 'Vokabeln'
+  },
+  {
+    href: '/tools/aussprache', icon: '🎙️', name: 'Aussprache',
+    desc: 'Satz anhören, nachsprechen, Wort für Wort vergleichen. Sie sehen, welches Wort nicht angekommen ist.',
+    tag: 'Sprechen'
+  }
+];
+
 export default function Home() {
   const router = useRouter();
   const [profile, setProfile] = useState(null);
   const [leaderboard, setLeaderboard] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [greetingText, setGreetingText] = useState('');
-  const [greetingPlaying, setGreetingPlaying] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -39,38 +70,26 @@ export default function Home() {
       setProfile(currentProfile);
 
       const { data: board } = await supabase
-        .from('profiles')
-        .select('id, full_name, xp, level')
-        .order('xp', { ascending: false })
-        .limit(5);
+        .from('profiles').select('id, full_name, xp, level')
+        .order('xp', { ascending: false }).limit(5);
       if (mounted && board) setLeaderboard(board);
-
       setLoading(false);
     })();
-    setGreetingText(WELCOME_LINES[Math.floor(Math.random() * WELCOME_LINES.length)]);
     return () => { mounted = false; };
   }, [router]);
 
-  function playGreeting(){
-    if (greetingPlaying) return;
-    setGreetingPlaying(true);
-    speakText(greetingText, () => setGreetingPlaying(false));
-  }
-
   async function handleLogout(){
     await supabase.auth.signOut();
-    router.push('/login');
+    router.replace('/');
   }
 
   if (loading || !profile) return null;
 
-  const level = profile.level || levelFromXp(profile.xp || 0);
+  const xp = profile.xp || 0;
+  const level = levelFromXp(xp);
   const stage = careerStage(level);
-  const casesSolved = profile.cases_solved || 0;
-
-  const stageStartXp = (stage.minLevel - 1) * 150;
-  const stageEndXp = stage.next ? (stage.next.minLevel - 1) * 150 : stageStartXp + 150;
-  const progressPct = Math.min(100, Math.round(((profile.xp - stageStartXp) / Math.max(1, stageEndXp - stageStartXp)) * 100));
+  const inLevel = xp % 150;
+  const solved = profile.cases_solved || 0;
 
   return (
     <>
@@ -78,74 +97,69 @@ export default function Home() {
         <div className="topbar-inner">
           <span className="brand-mark">FSP<span style={{ color: 'var(--brand)' }}>.</span>Trainer</span>
           <div className="stats">
-            <span className="stat">{profile.full_name}</span>
+            <span className="stat coins">Praxiskonto <b>{profile.coins ?? 0}</b></span>
+            <span className="stat level">Stufe <b>{level}</b></span>
             <button className="logout-btn" onClick={handleLogout}>Abmelden</button>
           </div>
         </div>
       </div>
 
       <div className="game-shell">
-        {greetingText && (
-          <div className="welcome-banner">
-            <button className="welcome-play" onClick={playGreeting} aria-label="Begrüßung anhören">
-              {greetingPlaying ? '♪' : '▶'}
-            </button>
-            <div className="welcome-text">
-              <b>Ihre erste Patientin/Ihr erster Patient wartet</b>
-              {greetingText}
-            </div>
+        <div className="hero-card">
+          <div className="hero-rank">{stage.title}</div>
+          <div className="hero-sub">{profile.full_name}</div>
+          <div className="xp-track"><div className="xp-fill" style={{ width: Math.min(100, inLevel / 150 * 100) + '%' }} /></div>
+          <div className="hero-meta">
+            <span>{inLevel} / 150 Erfahrung bis Stufe {level + 1}</span>
+            <span>{solved} Fälle gelöst</span>
+            {stage.next && <span>Nächster Rang: {stage.next.title}</span>}
           </div>
-        )}
-
-        <div className="career-card">
-          <div className="career-top">
-            <div>
-              <div className="career-stage">{stage.title}</div>
-              <div className="career-sub">Stufe {level}{stage.next ? ` · noch ${stage.next.minLevel - level} Stufen bis „${stage.next.title}“` : ' · höchste Stufe erreicht'}</div>
-            </div>
-            <div className="career-account">
-              <div className="career-account-label">Praxiskonto</div>
-              <div className="career-account-value">{profile.coins ?? 0}</div>
-            </div>
-          </div>
-          <div className="progress-track"><div className="progress-fill" style={{ width: progressPct + '%' }} /></div>
         </div>
 
-        <div className="clinic-banner">
-          {profile.clinic_name
-            ? <>Sie arbeiten in: <b>{profile.clinic_name}</b></>
-            : <>Sie arbeiten aktuell in: <b>Zahnklinik Nordstadt</b> (Ausbildungsklinik) — erreichen Sie „Praxisinhaber", um Ihre eigene Praxis zu eröffnen.</>}
+        <div className="section-title">Übungen</div>
+        <div className="tool-grid">
+          {TOOLS.map(t => (
+            <a className="tool-card" href={t.href} key={t.href}>
+              <div className="tool-icon">{t.icon}</div>
+              <div className="tool-name">{t.name}</div>
+              <div className="tool-desc">{t.desc}</div>
+              <div className="tool-foot">{t.tag}</div>
+            </a>
+          ))}
         </div>
 
-        <a href="/game" className="btn" style={{ width: '100%', justifyContent: 'center', marginBottom: 28 }}>
-          Weiter üben
-        </a>
+        <div className="section-title">Fortschritt</div>
+        <div className="two-col">
+          <div className="panel">
+            <h3>Nachweise</h3>
+            <div className="row-list">
+              {ACHIEVEMENTS.map(a => {
+                const done = solved >= a.need;
+                return (
+                  <div className={'ach' + (done ? ' done' : '')} key={a.id}>
+                    <span className="ach-dot" />
+                    <span style={{ flex: 1 }}>{a.title}</span>
+                    {!done && <span style={{ fontSize: 12, color: 'var(--faint)' }}>{solved}/{a.need}</span>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
 
-        <div className="section-block">
-          <h3 className="section-title">Nachweise</h3>
-          <div className="qual-list">
-            {ACHIEVEMENTS.map(a => {
-              const earned = casesSolved >= a.need;
-              return (
-                <div className={'qual-item' + (earned ? ' earned' : '')} key={a.id}>
-                  <span className="qual-check">{earned ? '✓' : '—'}</span>
-                  <span>{a.title}</span>
+          <div className="panel">
+            <h3>Klinik-Rangliste</h3>
+            <div className="row-list">
+              {leaderboard.length === 0 && <div className="row-item">Noch keine Einträge.</div>}
+              {leaderboard.map((p, i) => (
+                <div className="row-item" key={p.id}>
+                  <span className="rank-nr">{i + 1}.</span>
+                  <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {p.full_name || 'Anonym'}
+                  </span>
+                  <b>{p.xp ?? 0} XP</b>
                 </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="section-block">
-          <h3 className="section-title">Klinik-Rangliste</h3>
-          <div className="leaderboard">
-            {leaderboard.map((row, i) => (
-              <div className={'lb-row' + (row.id === profile.id ? ' me' : '')} key={row.id}>
-                <span className="lb-rank">{i + 1}</span>
-                <span className="lb-name">{row.id === profile.id ? 'Sie' : (row.full_name || 'Kollege/in')}</span>
-                <span className="lb-xp">{row.xp || 0} XP</span>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </div>

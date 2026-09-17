@@ -207,6 +207,42 @@ async function cmdPreview(titles){
   console.log('\nTayyor. Claude\'ga xabar bering — u rasmlarni ko\'rib baholaydi.');
 }
 
+// lib/findings.js dan tekshirilmagan topilmalarni o'qiydi va rasmlarini yuklaydi.
+// (Fayl ESM, skript CommonJS — shuning uchun matn sifatida o'qiymiz.)
+function readFindings(){
+  const src = fs.readFileSync(path.join(__dirname, '..', 'lib', 'findings.js'), 'utf8');
+  const out = [];
+  const blockRe = /(\w+):\s*\{([\s\S]*?)\n  \}/g;
+  let m;
+  while ((m = blockRe.exec(src))) {
+    const key = m[1], body = m[2];
+    const file = (body.match(/file:\s*'([^']+)'/) || [])[1];
+    const verified = /verified:\s*true/.test(body);
+    const label = (body.match(/label:\s*'([^']*)'/) || [])[1] || '';
+    if (file) out.push({ key, file, verified, label });
+  }
+  return out;
+}
+
+async function cmdVerify(arg){
+  const all = readFindings();
+  const todo = arg === 'all' ? all : all.filter(f => !f.verified);
+  if (!todo.length) { console.log('Tekshirilmagan topilma yo\'q.'); return; }
+  const from = parseInt(process.argv[4] || '0', 10) || 0;
+  const count = parseInt(process.argv[5] || '5', 10) || 5;
+  const slice = todo.slice(from, from + count);
+  console.log(`Jami tekshirilmagan: ${todo.length}. Hozir: ${from + 1}-${from + slice.length}\n`);
+  for (const f of slice) {
+    console.log(`[${f.key}] ${f.label}`);
+    await cmdPreview([f.file]);
+    await new Promise(r => setTimeout(r, 7000));   // Wikimedia chegarasiga tushmaslik uchun
+  }
+  const left = todo.length - (from + slice.length);
+  console.log(left > 0
+    ? `\nQoldi: ${left} ta. Keyingisi uchun: node scripts/fetch-open-images.js verify new ${from + count}`
+    : '\nHammasi yuklandi.');
+}
+
 function extFromMime(mime, url){
   if (mime === 'image/png') return 'png';
   if (mime === 'image/jpeg') return 'jpg';
@@ -259,6 +295,7 @@ const cmd = process.argv[2] || 'list';
   else if (cmd === 'search') await cmdSearch(process.argv.slice(3).join(' '));
   else if (cmd === 'cat') await cmdCat(process.argv.slice(3).join(' '));
   else if (cmd === 'preview') await cmdPreview(process.argv.slice(3));
+  else if (cmd === 'verify') await cmdVerify(process.argv[3] || 'new');
   else if (cmd === 'download') await cmdDownload();
   else console.log('Buyruqlar: list | search "termin" | cat "Category:Nomi" | download');
 })();

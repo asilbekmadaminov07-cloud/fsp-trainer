@@ -75,6 +75,9 @@ export default function Game() {
   const [transcribing, setTranscribing] = useState(false);
   const [voiceError, setVoiceError] = useState('');
   const [showQuiz, setShowQuiz] = useState(false);
+  const [aiCase, setAiCase] = useState(null);      // Gemini yaratgan holat
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState('');
 
   const bodyRef = useRef(null);
   const recognitionRef = useRef(null);
@@ -86,7 +89,7 @@ export default function Game() {
   const seenRef = useRef({});    // har daraja uchun allaqachon ko'rilgan holatlar
 
   const casesForDiff = CASES.filter(c => c.difficulty === currentDiff);
-  const currentCase = casesForDiff[currentCaseIdx] || casesForDiff[0];
+  const currentCase = aiCase || casesForDiff[currentCaseIdx] || casesForDiff[0];
 
   // Har renderda eng so'nggi qiymatlarni ref'ga yozamiz — SpeechRecognition callback'lari
   // "eskirgan" (stale) state bilan ishlamasligi uchun.
@@ -224,25 +227,55 @@ export default function Game() {
     resetCase(pickRandomIdx(currentDiff, currentCaseIdx));
   }
 
-  function resetCase(idx){
+  // Istalgan holatni (qo'lda yozilgan yoki AI yaratgan) boshlaydi
+  function beginCase(c){
     setShowQuiz(false);
-    setCurrentCaseIdx(idx);
-    const c = CASES.filter(x => x.difficulty === currentDiff)[idx];
     setEvalResult(null);
     setDiagInput('');
     setDiagError(false);
+    setAiError('');
     caseVoiceRef.current = pickVoice();
     stopSpeaking();
-    if (c) {
-      setHistory([{ role: 'assistant', content: c.opener }]);
-      if (activeRef.current) {
-        busyRef.current = true;
-        speak(c.opener).then(() => {
-          busyRef.current = false;
-          if (activeRef.current) restartListening();
-        });
-      }
+    if (!c) return;
+    setHistory([{ role: 'assistant', content: c.opener }]);
+    if (activeRef.current) {
+      busyRef.current = true;
+      speak(c.opener).then(() => {
+        busyRef.current = false;
+        if (activeRef.current) restartListening();
+      });
     }
+  }
+
+  function resetCase(idx){
+    setAiCase(null);
+    setCurrentCaseIdx(idx);
+    beginCase(CASES.filter(x => x.difficulty === currentDiff)[idx]);
+  }
+
+  // Cheksiz holat: server tekshirilgan rentgen topilmasini tanlaydi,
+  // Gemini unga mos bemorni yozadi — shuning uchun rasm har doim mos keladi.
+  async function generateCase(){
+    if (aiLoading) return;
+    setAiLoading(true);
+    setAiError('');
+    try {
+      const res = await fetch('/api/case', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          difficulty: currentDiff,
+          exclude: CASES.filter(c => c.difficulty === currentDiff).map(c => c.name)
+        })
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(d.error || 'Fall konnte nicht erstellt werden');
+      setAiCase(d.case);
+      beginCase(d.case);
+    } catch (e) {
+      setAiError(e.message);
+    }
+    setAiLoading(false);
   }
 
   async function callGemini(messages, system, maxTokens){
@@ -494,13 +527,22 @@ export default function Game() {
                   <div className="cf-meta">
                     <span className={'badge ' + currentCase.difficulty}>{currentCase.difficulty}</span>
                     <span>{currentCase.meta}</span>
+                    {currentCase.generated && <span className="ai-tag" title="Von der KI für diesen Röntgenbefund erstellt">neu</span>}
                   </div>
                 </div>
               </div>
-              <button className="next-case-btn" onClick={newCase} title="Neuer Patient aus dieser Schwierigkeitsstufe">
-                Nächster Patient →
-              </button>
+              <div className="case-actions">
+                <button className="next-case-btn" onClick={newCase} title="Geprüfter Fall aus dieser Stufe">
+                  Nächster Patient →
+                </button>
+                <button className="next-case-btn ai" onClick={generateCase} disabled={aiLoading}
+                        title="Neuer, noch nie dagewesener Fall — passend zu einem geprüften Röntgenbefund">
+                  {aiLoading ? 'Fall wird erstellt…' : '✨ Neuer Fall'}
+                </button>
+              </div>
             </div>
+
+            {aiError && <div className="voice-hint"><span className="error-text">{aiError}</span></div>}
 
             {showQuiz ? (
               <Quiz
