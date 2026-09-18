@@ -60,6 +60,8 @@ export default function Header({ profile, backHref }){
                 <div className="row-item"><span>Mitglied seit</span><b>{memberDays} Tage</b></div>
                 <div className="row-item"><span>Geübt an</span><b>{practiceDays} Tagen</b></div>
                 <a href="/mistakes" className="row-item" style={{ cursor: 'pointer' }}><span>Meine Fehler</span><b>→</b></a>
+                <a href="/daily" className="row-item" style={{ cursor: 'pointer' }}><span>10-Minuten-Training</span><b>→</b></a>
+                <a href="/coach" className="row-item" style={{ cursor: 'pointer' }}><span>AI-Lerncoach</span><b>→</b></a>
                 <a href="/home" className="row-item" style={{ cursor: 'pointer' }}><span>Dashboard</span><b>→</b></a>
                 <div style={{ marginTop: 10 }}><SensorToggle /></div>
                 <button className="logout-btn" style={{ width: '100%', marginTop: 8 }} onClick={handleLogout}>Abmelden</button>

@@ -16,6 +16,16 @@ const ACHIEVEMENTS = [
 
 const TOOLS = [
   {
+    href: '/daily', icon: '⚡', name: '10-Minuten-Training',
+    desc: 'Ihre tägliche persönliche Challenge: fünf Fragen, Streak, Ligapunkte und Zertifikat.',
+    tag: 'Heute · Kostenlos'
+  },
+  {
+    href: '/coach', icon: '🧠', name: 'Persönlicher AI-Lerncoach',
+    desc: 'Analysiert Ihre Fehler und erstellt daraus einen konkreten individuellen 7-Tage-Lernplan.',
+    tag: 'Individueller Lernweg'
+  },
+  {
     href: '/game', icon: '🦷', name: 'Patientengespräch',
     desc: 'Anamnese erheben, Röntgenbild anfordern, Diagnose stellen — danach 20 Prüfungsfragen zum Fall.',
     tag: 'Teil 1 · Kernübung'
@@ -120,6 +130,11 @@ export default function Home() {
             {stage.next && <span>Nächster Rang: {stage.next.title}</span>}
           </div>
         </TiltCard>
+
+        <div className="dashboard-quick">
+          <a href="/daily"><span>⚡</span><div><b>Heutiges 10-Minuten-Training</b><small>Challenge starten und Serie halten</small></div><em>Start →</em></a>
+          <a href="/coach"><span>🧠</span><div><b>Ihr persönlicher Lernplan</b><small>AI-Coach analysiert Ihre Fehler</small></div><em>Öffnen →</em></a>
+        </div>
 
         <div className="section-title">Übungen</div>
         <div className="tool-grid">

@@ -93,7 +93,7 @@ export default function MistakesPage(){
                 <a
                   className="quiz-btn ghost"
                   href={'/lernen?' + new URLSearchParams({
-                    thema: m.case_name || m.difficulty || '', frage: m.question, falsch: m.chosen || '', richtig: m.correct || ''
+                    thema: m.topic || m.case_name || m.difficulty || '', frage: m.question, falsch: m.chosen || '', richtig: m.correct || ''
                   }).toString()}
                 >
                   Thema vertiefen →
