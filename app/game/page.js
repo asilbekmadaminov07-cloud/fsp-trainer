@@ -281,7 +281,7 @@ export default function Game() {
   async function callGemini(messages, system, maxTokens){
     const res = await apiRawPost('/api/chat', { system, messages, maxTokens: maxTokens || 300 });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Server xatosi');
+    if (!res.ok) throw new Error(data.error || 'Der Server antwortet nicht.');
     return data.text || '';
   }
 

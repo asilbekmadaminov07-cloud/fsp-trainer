@@ -5,6 +5,7 @@
 // POST { caseName, meta, diagnosis, difficulty, transcript }
 // → { questions: [{ q, options: [4 ta], correct: 0-3, explanation, topic }] }
 
+import { callGemini, geminiMessage } from '@/lib/gemini';
 import { guard } from '@/lib/apiGuard';
 
 export const maxDuration = 60;
@@ -108,15 +109,15 @@ export async function POST(req) {
 
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    return Response.json({ error: 'GEMINI_API_KEY sozlanmagan.' }, { status: 500 });
+    return Response.json({ error: 'Der KI-Dienst ist nicht konfiguriert.' }, { status: 500 });
   }
 
   let payload;
   try { payload = await req.json(); }
-  catch (e) { return Response.json({ error: 'Noto\'g\'ri so\'rov' }, { status: 400 }); }
+  catch (e) { return Response.json({ error: 'Ungültige Anfrage.' }, { status: 400 }); }
 
   if (!payload || !payload.diagnosis) {
-    return Response.json({ error: 'diagnosis kerak' }, { status: 400 });
+    return Response.json({ error: 'Es wurde keine Diagnose übergeben.' }, { status: 400 });
   }
 
   const body = {
@@ -131,25 +132,18 @@ export async function POST(req) {
   };
 
   try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
-    );
-    const data = await res.json();
-    if (!res.ok) {
-      return Response.json({ error: data.error?.message || 'Gemini API xatosi' }, { status: res.status });
-    }
+    const { data: data } = await callGemini(body, apiKey);
     const text = data.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || '';
     let parsed;
     try { parsed = JSON.parse(text); }
-    catch (e) { return Response.json({ error: 'Javobni o\'qib bo\'lmadi' }, { status: 502 }); }
+    catch (e) { return Response.json({ error: 'Die Antwort konnte nicht gelesen werden. Bitte erneut versuchen.' }, { status: 502 }); }
 
     const questions = sanitize(parsed.questions).slice(0, 20);
     if (questions.length < 10) {
-      return Response.json({ error: 'Yetarli savol yaratilmadi (' + questions.length + ')' }, { status: 502 });
+      return Response.json({ error: 'Es konnten nicht genug Fragen erstellt werden (' + questions.length + ')' }, { status: 502 });
     }
     return Response.json({ questions });
   } catch (err) {
-    return Response.json({ error: 'So\'rov bajarilmadi: ' + err.message }, { status: 500 });
+    return Response.json({ error: geminiMessage(err) }, { status: err.status || 502 });
   }
 }

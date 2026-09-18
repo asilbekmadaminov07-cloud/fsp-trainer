@@ -75,7 +75,7 @@ export default function Register() {
         full_name: fullName,
         age: age ? parseInt(age, 10) : null
       });
-      if (profileError) { setLoading(false); setError('Konto yaratildi, lekin profil xatosi: ' + profileError.message); return; }
+      if (profileError) { setLoading(false); setError('Das Konto wurde angelegt, aber das Profil konnte nicht gespeichert werden: ' + profileError.message); return; }
     }
 
     setLoading(false);
