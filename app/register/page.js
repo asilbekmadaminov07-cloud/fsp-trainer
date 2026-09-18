@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import Script from 'next/script';
 import { supabase } from '@/lib/supabaseClient';
 import { useRouter } from 'next/navigation';
+import TiltCard from '@/app/components/TiltCard';
 
 const SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 
@@ -91,7 +92,7 @@ export default function Register() {
   return (
     <div className="auth-shell">
       {SITE_KEY && <Script src="https://www.google.com/recaptcha/api.js?render=explicit" strategy="afterInteractive" />}
-      <div className="auth-box">
+      <TiltCard className="auth-box">
         <h1>Registrieren</h1>
         <p className="sub">Erstellen Sie Ihr FSP-Trainer-Konto.</p>
         <form onSubmit={handleSubmit} className="card">
@@ -125,7 +126,7 @@ export default function Register() {
         <p className="sub" style={{ marginTop: 16, textAlign: 'center' }}>
           Schon ein Konto? <a href="/login" style={{ color: 'var(--brand)', fontWeight: 500 }}>Anmelden</a>
         </p>
-      </div>
+      </TiltCard>
     </div>
   );
 }

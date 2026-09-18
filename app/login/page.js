@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { useRouter } from 'next/navigation';
+import TiltCard from '@/app/components/TiltCard';
 
 export default function Login() {
   const router = useRouter();
@@ -22,7 +23,7 @@ export default function Login() {
 
   return (
     <div className="auth-shell">
-      <div className="auth-box">
+      <TiltCard className="auth-box">
         <h1>Anmelden</h1>
         <p className="sub">Willkommen zurück — machen Sie da weiter, wo Sie aufgehört haben.</p>
         <form onSubmit={handleSubmit} className="card">
@@ -42,7 +43,7 @@ export default function Login() {
         <p className="sub" style={{ marginTop: 16, textAlign: 'center' }}>
           Noch kein Konto? <a href="/register" style={{ color: 'var(--brand)', fontWeight: 500 }}>Registrieren</a>
         </p>
-      </div>
+      </TiltCard>
     </div>
   );
 }

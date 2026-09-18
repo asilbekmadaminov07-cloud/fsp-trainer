@@ -2,6 +2,8 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { useRouter } from 'next/navigation';
+import TiltCard from '@/app/components/TiltCard';
+import SensorToggle from '@/app/components/SensorToggle';
 
 export default function Home() {
   const router = useRouter();
@@ -38,15 +40,16 @@ export default function Home() {
           <a className="btn btn-ghost" href="/login">Ich habe schon ein Konto</a>
         </div>
         <p className="entry-note">Keine Kartendaten nötig · in wenigen Sekunden startklar</p>
+        <div style={{ marginTop: 14 }}><SensorToggle /></div>
       </div>
 
       <div className="entry-preview">
         <div className="preview-label">So beginnt ein Fall</div>
-        <div className="preview-card">
+        <TiltCard className="preview-card">
           <div className="preview-msg patient">Guten Tag, Herr Doktor. Ich habe seit ein paar Tagen richtig üble Schmerzen im Unterkiefer links.</div>
           <div className="preview-msg doctor">Seit wann genau, und wie würden Sie den Schmerz beschreiben?</div>
           <div className="preview-msg patient2">Das pocht die ganze Zeit. Besonders nachts wird's schlimmer.</div>
-        </div>
+        </TiltCard>
       </div>
 
       <div style={{ height: 28 }} />

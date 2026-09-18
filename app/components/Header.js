@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { daysSince } from '@/lib/practice';
+import SensorToggle from '@/app/components/SensorToggle';
 
 // Barcha ichki sahifalar uchun umumiy tepa panel: hisob ma'lumotlari,
 // amaliyot statistikasi va chiqish tugmasi bitta joyda.
@@ -60,6 +61,7 @@ export default function Header({ profile, backHref }){
                 <div className="row-item"><span>Geübt an</span><b>{practiceDays} Tagen</b></div>
                 <a href="/mistakes" className="row-item" style={{ cursor: 'pointer' }}><span>Meine Fehler</span><b>→</b></a>
                 <a href="/home" className="row-item" style={{ cursor: 'pointer' }}><span>Dashboard</span><b>→</b></a>
+                <div style={{ marginTop: 10 }}><SensorToggle /></div>
                 <button className="logout-btn" style={{ width: '100%', marginTop: 8 }} onClick={handleLogout}>Abmelden</button>
               </div>
             )}

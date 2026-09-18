@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { levelFromXp, careerStage } from '@/lib/career';
 import { touchPracticeDay, daysSince } from '@/lib/practice';
 import Header from '@/app/components/Header';
+import TiltCard from '@/app/components/TiltCard';
 
 const ACHIEVEMENTS = [
   { id: 'first_case', title: 'Erste Diagnose bestanden', need: 1 },
@@ -107,7 +108,7 @@ export default function Home() {
       <Header profile={profile} />
 
       <div className="game-shell">
-        <div className="hero-card">
+        <TiltCard className="hero-card">
           <div className="hero-rank">{stage.title}</div>
           <div className="hero-sub">{profile.full_name}</div>
           <div className="xp-track"><div className="xp-fill" style={{ width: Math.min(100, inLevel / 150 * 100) + '%' }} /></div>
@@ -118,17 +119,17 @@ export default function Home() {
             <span>Mitglied seit {memberDays} Tagen</span>
             {stage.next && <span>Nächster Rang: {stage.next.title}</span>}
           </div>
-        </div>
+        </TiltCard>
 
         <div className="section-title">Übungen</div>
         <div className="tool-grid">
           {TOOLS.map(t => (
-            <a className="tool-card" href={t.href} key={t.href}>
+            <TiltCard as="a" className="tool-card" href={t.href} key={t.href}>
               <div className="tool-icon">{t.icon}</div>
               <div className="tool-name">{t.name}</div>
               <div className="tool-desc">{t.desc}</div>
               <div className="tool-foot">{t.tag}</div>
-            </a>
+            </TiltCard>
           ))}
         </div>
 

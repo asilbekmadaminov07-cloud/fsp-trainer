@@ -539,6 +539,48 @@ h1,h2,h3{font-family:var(--serif);letter-spacing:-.015em;line-height:1.18}
 @keyframes float3d{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-6px) rotate(.6deg)}}
 @media(prefers-reduced-motion:reduce){.float-3d{animation:none}}
 
+/* ---------- ultra-pro: sensor 3D, shisha, animatsion fon ---------- */
+.tilt3d-el{ transition: box-shadow .3s var(--ease), border-color .3s var(--ease); }
+
+.entry{ position: relative; overflow: hidden; }
+.entry-bg{ position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.entry-bg .blob{
+  position: absolute; border-radius: 50%; filter: blur(60px); opacity: .55;
+  animation: blobDrift 22s ease-in-out infinite;
+}
+.entry-bg .blob1{ width: 420px; height: 420px; top: -140px; left: -100px; background: radial-gradient(circle, var(--brand-2), transparent 70%); animation-duration: 26s; }
+.entry-bg .blob2{ width: 380px; height: 380px; top: 30%; right: -160px; background: radial-gradient(circle, var(--gold-tint), transparent 70%); animation-duration: 32s; animation-delay: -6s; }
+.entry-bg .blob3{ width: 320px; height: 320px; bottom: -120px; left: 20%; background: radial-gradient(circle, var(--brand-tint), transparent 70%); animation-duration: 28s; animation-delay: -12s; }
+@keyframes blobDrift{
+  0%,100%{ transform: translate(0,0) scale(1); }
+  33%{ transform: translate(30px,-24px) scale(1.08); }
+  66%{ transform: translate(-24px,18px) scale(.96); }
+}
+.entry > *:not(.entry-bg){ position: relative; z-index: 1; }
+@media(prefers-reduced-motion: reduce){ .entry-bg .blob{ animation: none; } }
+
+/* Sichqoncha/sensor bilan boshqariladigan sirtlar uchun "premium shisha" ko'rinish */
+.hero-card.tilt3d-el, .auth-box.tilt3d-el, .preview-card.tilt3d-el{
+  backdrop-filter: saturate(1.4) blur(2px);
+}
+.tool-card.tilt3d-el:hover{ box-shadow: var(--sh-4), 0 0 0 1px var(--brand) inset; }
+
+/* Tugmalarda nozik "yaltirash" (sheen) — pro-ilovalarga xos mikro-detal */
+.btn{ position: relative; overflow: hidden; }
+.btn::before{
+  content:''; position:absolute; top:0; left:-60%; width:40%; height:100%;
+  background: linear-gradient(120deg, transparent, rgba(255,255,255,.4), transparent);
+  transform: skewX(-20deg); transition: left .55s var(--ease);
+}
+.btn:hover::before{ left: 140%; }
+
+.sensor-toggle{
+  border:1px solid var(--line); background: linear-gradient(180deg, var(--surface), var(--surface-2));
+  color: var(--brand-dark); border-radius: 999px; padding: 9px 16px; font-size: 12.5px; font-weight: 600;
+  cursor: pointer; box-shadow: var(--sh-1), var(--edge); transition: .2s var(--ease);
+}
+.sensor-toggle:hover{ border-color: var(--brand); transform: translateY(-1px); box-shadow: var(--sh-2); }
+
 @media(max-width:560px){
   .quiz-q{font-size:17.5px}
   .exam-cta{flex-direction:column;align-items:stretch}
