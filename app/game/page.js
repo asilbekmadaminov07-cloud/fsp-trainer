@@ -1,11 +1,12 @@
 'use client';
+import { apiRawPost, apiRawGet } from '@/lib/api';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
-import { apiPost, apiGet } from '@/lib/api';
 import { CASES, DIFFS, DIFF_REWARDS, IMAGES, COMMON_PATIENT_INSTRUCTIONS } from '@/lib/cases';
 import { levelFromXp, careerStage } from '@/lib/career';
-import { markPracticeToday } from '@/lib/streak';
+import { touchPracticeDay } from '@/lib/practice';
+import Header from '@/app/components/Header';
 import {
   speakNatural, stopSpeaking, pickVoice,
   unlockAudio, hasSpeechRecognition, hasRecorder, startRecording, transcribeAudio
@@ -23,7 +24,8 @@ function CaseImage({ imageKey, commonsFile }) {
     let alive = true;
     setInfo(null);
     setFailed(false);
-    apiGet('/api/case-image?file=' + encodeURIComponent(commonsFile))
+    apiRawGet('/api/case-image?file=' + encodeURIComponent(commonsFile))
+      .then(r => r.ok ? r.json() : Promise.reject(new Error('nicht verfügbar')))
       .then(d => { if (alive) setInfo(d); })
       .catch(() => { if (alive) setFailed(true); });
     return () => { alive = false; };
@@ -141,15 +143,15 @@ export default function Game() {
         .eq('id', data.session.user.id)
         .single();
       if (!mounted) return;
+      let currentProfile = prof;
       if (error || !prof) {
         const { data: created } = await supabase.from('profiles').insert({
           id: data.session.user.id, full_name: data.session.user.email, coins: 100, xp: 0
         }).select().single();
-        setProfile(created);
-      } else {
-        setProfile(prof);
-        markPracticeToday(prof).then(p => { if (mounted && p) setProfile(p); });
+        currentProfile = created;
       }
+      setProfile(currentProfile);
+      touchPracticeDay(currentProfile).then(updated => { if (mounted && updated) setProfile(updated); });
       setLoadingProfile(false);
     });
     return () => { mounted = false; };
@@ -262,10 +264,12 @@ export default function Game() {
     setAiLoading(true);
     setAiError('');
     try {
-      const d = await apiPost('/api/case', {
-        difficulty: currentDiff,
-        exclude: CASES.filter(c => c.difficulty === currentDiff).map(c => c.name)
+      const res = await apiRawPost('/api/case', {
+          difficulty: currentDiff,
+          exclude: CASES.filter(c => c.difficulty === currentDiff).map(c => c.name)
       });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(d.error || 'Fall konnte nicht erstellt werden');
       setAiCase(d.case);
       beginCase(d.case);
     } catch (e) {
@@ -275,7 +279,9 @@ export default function Game() {
   }
 
   async function callGemini(messages, system, maxTokens){
-    const data = await apiPost('/api/chat', { system, messages, maxTokens: maxTokens || 300 });
+    const res = await apiRawPost('/api/chat', { system, messages, maxTokens: maxTokens || 300 });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Server xatosi');
     return data.text || '';
   }
 
@@ -481,20 +487,7 @@ export default function Game() {
 
   return (
     <>
-      <div className="topbar">
-        <div className="topbar-inner">
-          <a href="/home" className="brand-mark" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontSize: 14 }}>←</span> FSP<span style={{ color: 'var(--brand)' }}>.</span>Trainer
-          </a>
-          <div className="stats">
-            {(profile.streak_days || 0) > 0 && (
-              <span className="streak" title="Aufeinanderfolgende Übungstage">🔥 {profile.streak_days}</span>
-            )}
-            <span className="stat coins">Praxiskonto <b>{profile.coins ?? 0}</b></span>
-            <span className="stat">{profile.full_name}</span>
-          </div>
-        </div>
-      </div>
+      <Header profile={profile} backHref="/home" />
 
       <div className="game-shell">
         <div className="difficulty-row">
@@ -543,6 +536,7 @@ export default function Game() {
                 transcript={quizTranscript()}
                 onPassed={handleQuizPassed}
                 onClose={() => { setShowQuiz(false); newCase(); }}
+                userId={profile.id}
               />
             ) : (
             <>

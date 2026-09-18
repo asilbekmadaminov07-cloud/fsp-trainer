@@ -1,13 +1,14 @@
 'use client';
+import { apiRawPost, apiRawGet } from '@/lib/api';
 import { useEffect, useState } from 'react';
-import { apiPost } from '@/lib/api';
+import { supabase } from '@/lib/supabaseClient';
 
 // 20 ta savolli imtihon.
 // Qoida: 3-xato — imtihon tugaydi va boshidan boshlanadi.
 // Ya'ni o'tish uchun kamida 18/20 kerak.
 const MAX_WRONG = 3;
 
-export default function Quiz({ currentCase, transcript, onPassed, onClose }) {
+export default function Quiz({ currentCase, transcript, onPassed, onClose, userId }) {
   const [questions, setQuestions] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -25,13 +26,18 @@ export default function Quiz({ currentCase, transcript, onPassed, onClose }) {
     setLoading(true);
     setError('');
     setQuestions(null);
-    apiPost('/api/quiz', {
-      caseName: currentCase.name,
-      meta: currentCase.meta,
-      diagnosis: currentCase.diagnosis,
-      difficulty: currentCase.difficulty,
-      transcript
-    })
+    apiRawPost('/api/quiz', {
+        caseName: currentCase.name,
+        meta: currentCase.meta,
+        diagnosis: currentCase.diagnosis,
+        difficulty: currentCase.difficulty,
+        transcript
+      })
+      .then(async r => {
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(d.error || 'Fragen konnten nicht geladen werden');
+        return d;
+      })
       .then(d => {
         if (!alive) return;
         setQuestions(d.questions);
@@ -45,6 +51,21 @@ export default function Quiz({ currentCase, transcript, onPassed, onClose }) {
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [attempt]);
+
+  // Imtihon tugagach (o'tildi yoki yiqildi), xato javoblarni "Mening xatolarim" ga saqlaymiz.
+  useEffect(() => {
+    if ((status !== 'passed' && status !== 'failed') || !userId || wrong.length === 0) return;
+    supabase.from('mistakes').insert(wrong.map(w => ({
+      user_id: userId,
+      case_name: currentCase?.name || null,
+      difficulty: currentCase?.difficulty || null,
+      question: w.q,
+      chosen: w.chosen,
+      correct: w.correct,
+      explanation: w.explanation
+    }))).then(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status]);
 
   function restart(){
     setIdx(0); setSelected(null); setRevealed(false);
@@ -65,7 +86,6 @@ export default function Quiz({ currentCase, transcript, onPassed, onClose }) {
       const next = [...wrong, {
         nr: idx + 1,
         q: q.q,
-        topic: q.topic || '',
         chosen: q.options[selected],
         correct: q.options[q.correct],
         explanation: q.explanation
@@ -188,17 +208,6 @@ export default function Quiz({ currentCase, transcript, onPassed, onClose }) {
       {revealed && (
         <div className={'quiz-feedback ' + (selected === q.correct ? 'ok' : 'bad')}>
           <b>{selected === q.correct ? 'Richtig.' : 'Falsch.'}</b> {q.explanation}
-          {selected !== q.correct && (
-            <div>
-              <a className="learn-btn" target="_blank" rel="noreferrer"
-                 href={'/lernen?' + new URLSearchParams({
-                   thema: q.topic || '', frage: q.q,
-                   falsch: q.options[selected], richtig: q.options[q.correct]
-                 }).toString()}>
-                Thema verstehen →
-              </a>
-            </div>
-          )}
         </div>
       )}
 
@@ -215,14 +224,6 @@ export default function Quiz({ currentCase, transcript, onPassed, onClose }) {
 }
 
 function MistakeList({ wrong }) {
-  function lessonHref(w){
-    const p = new URLSearchParams();
-    if (w.topic) p.set('thema', w.topic);
-    p.set('frage', w.q);
-    p.set('falsch', w.chosen);
-    p.set('richtig', w.correct);
-    return '/lernen?' + p.toString();
-  }
   return (
     <div className="quiz-mistakes">
       {wrong.map((w, i) => (
@@ -232,9 +233,6 @@ function MistakeList({ wrong }) {
           <div className="qm-line bad">Ihre Antwort: {w.chosen}</div>
           <div className="qm-line good">Richtig wäre: {w.correct}</div>
           <div className="qm-exp">{w.explanation}</div>
-          <a className="learn-btn" href={lessonHref(w)} target="_blank" rel="noreferrer">
-            Thema verstehen →
-          </a>
         </div>
       ))}
     </div>
