@@ -654,3 +654,76 @@ h1,h2,h3{font-family:var(--serif);letter-spacing:-.015em;line-height:1.18}
 .certificate-page{min-height:100vh;padding:32px;background:#eaf3f7}.certificate-actions{display:flex;justify-content:center;gap:12px;margin-bottom:20px}.certificate{max-width:900px;min-height:620px;margin:auto;padding:62px;border:12px double #163d49;background:#fff;color:#17343d;text-align:center;box-shadow:0 24px 60px rgba(16,49,59,.18);position:relative}.cert-mark{font-size:18px;font-weight:800}.cert-mark span{color:#40a8c4}.cert-kicker{margin-top:55px;font-size:12px;letter-spacing:.28em;color:#52717a}.certificate h1{font-family:var(--serif);font-size:64px;font-weight:500;margin:10px 0 28px}.cert-intro{color:#62777e}.certificate h2{font-family:var(--serif);font-size:34px;margin:12px auto 20px;padding-bottom:8px;border-bottom:1px solid #8aa2aa;max-width:560px}.certificate>p:not(.cert-intro){max-width:620px;margin:auto;line-height:1.7}.cert-stat{margin:32px auto;display:flex;flex-direction:column}.cert-stat b{font-size:30px;color:#2787a2}.cert-stat span{font-size:12px;color:#62777e}.cert-bottom{position:absolute;bottom:45px;left:62px;right:62px;display:flex;justify-content:space-between;border-top:1px solid #c5d4d8;padding-top:15px;font-size:12px}.cert-disclaimer{text-align:center;color:#607780;font-size:11px;margin-top:14px}.locked-cert{display:grid;place-items:center}.locked-cert .panel{max-width:520px;text-align:center}.locked-cert p{margin:12px 0 22px;color:var(--muted)}
 @media(max-width:700px){.dashboard-quick,.coach-grid{grid-template-columns:1fr}.dashboard-quick{margin-bottom:24px}.coach-hero{align-items:stretch;flex-direction:column;padding:22px 18px}.coach-hero .quiz-btn{width:100%;text-align:center}.coach-hero h2{font-size:25px}.daily-strip{grid-template-columns:1fr}.daily-result{flex-direction:column;text-align:center;padding:26px 18px}.plan-day em{display:none}.certificate-page{padding:12px}.certificate{min-height:600px;padding:35px 20px;border-width:7px}.certificate h1{font-size:44px}.certificate h2{font-size:27px}.cert-bottom{left:22px;right:22px;flex-direction:column;gap:6px}.certificate-actions{flex-direction:column}.certificate-actions .quiz-btn{width:100%}}
 @media print{.certificate-actions,.cert-disclaimer{display:none}.certificate-page{padding:0;background:#fff}.certificate{box-shadow:none;max-width:none;min-height:95vh}}
+
+/* ---------- mobile-first dashboard navigation ---------- */
+.section-heading-row{display:flex;align-items:center;justify-content:space-between;margin-top:8px}
+.section-heading-row .section-title{margin:0}
+.section-heading-row>span{font-size:12px;color:var(--faint)}
+.tool-filters{display:flex;gap:8px;margin:14px 0 16px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.tool-filters::-webkit-scrollbar{display:none}
+.tool-filters button{flex:0 0 auto;border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:999px;padding:8px 14px;font-size:12.5px;font-weight:650;cursor:pointer;box-shadow:var(--sh-1)}
+.tool-filters button.active{background:var(--brand);border-color:var(--brand);color:#fff;box-shadow:var(--sh-brand)}
+
+@media(max-width:700px){
+  .topbar-inner{display:grid;grid-template-columns:auto 1fr;align-items:center;padding:9px 12px;gap:8px;flex-wrap:nowrap}
+  .brand-mark{font-size:15px;white-space:nowrap}
+  .stats{justify-content:flex-end;gap:5px;flex-wrap:nowrap;min-width:0}
+  .stat{padding:5px 7px;gap:3px;font-size:11px}
+  .stat b{font-size:12px}
+  .streak-badge{padding:5px 7px;gap:3px;font-size:11px;white-space:nowrap}
+  .streak-word{display:none}
+  .acct-menu-btn{padding:2px}
+  .acct-avatar{width:31px;height:31px;border-radius:9px;font-size:12px}
+
+  .game-shell{padding:14px 12px 52px}
+  .hero-card{padding:18px 16px;margin-bottom:14px;border-radius:20px}
+  .hero-rank{font-size:21px}
+  .hero-sub{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .xp-track{margin-top:14px;height:7px}
+  .hero-meta{display:grid;grid-template-columns:1fr 1fr;gap:7px 12px;margin-top:11px;font-size:11.5px}
+  .hero-meta span:last-child{grid-column:1/-1}
+
+  .dashboard-quick{grid-template-columns:1fr 1fr;gap:9px;margin:12px 0 22px}
+  .dashboard-quick a{align-items:flex-start;flex-direction:column;gap:7px;padding:13px 12px;min-height:136px}
+  .dashboard-quick a>span{font-size:22px}
+  .dashboard-quick div{gap:4px}
+  .dashboard-quick b{font-size:13.5px;line-height:1.25}
+  .dashboard-quick small{font-size:10.5px;line-height:1.35}
+  .dashboard-quick em{margin-top:auto;font-size:11px}
+
+  .section-heading-row{margin-top:2px}
+  .section-heading-row .section-title{font-size:24px}
+  .tool-filters{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:10px 0 13px;overflow:visible}
+  .tool-filters button{padding:8px 6px;font-size:11.5px;text-align:center}
+  .tool-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+  .tool-card{min-height:150px;padding:13px 11px 12px;gap:7px;border-radius:16px}
+  .tool-card:hover{transform:none}
+  .tool-icon{width:38px;height:38px;border-radius:11px;font-size:18px;margin:0}
+  .tool-name{font-family:var(--sans);font-size:13.5px;line-height:1.25;font-weight:720;overflow-wrap:anywhere}
+  .tool-desc{display:none}
+  .tool-foot{margin-top:auto;font-size:9.5px;line-height:1.3;letter-spacing:.035em}
+
+  .panel{padding:16px 14px;border-radius:17px}
+  .ach,.row-item{padding:10px;font-size:12.5px}
+
+  /* Patient chat: keep controls and conversation usable on one phone screen. */
+  .cf-head{padding:12px 13px;gap:9px}
+  .cf-actions{display:grid;grid-template-columns:1fr 1fr;width:100%;gap:8px}
+  .cf-actions button{width:100%;padding:9px 7px;font-size:12px}
+  .voice-bar{padding:10px 13px;gap:8px}
+  .voice-btn{font-size:12px;padding:8px 11px}
+  .voice-hint{padding:10px 13px;font-size:11.5px;line-height:1.45}
+  .cf-body{height:42vh;min-height:230px;max-height:390px;padding:13px}
+  .msg{max-width:92%;font-size:13.5px;padding:11px 13px;line-height:1.5}
+  .cf-input{display:grid;grid-template-columns:1fr auto;padding:10px 12px;gap:8px}
+  .cf-input input{min-width:0;padding:11px 12px;font-size:14px}
+  .cf-input button{width:auto!important;padding:10px 14px!important;font-size:13px}
+  .image-row{display:grid;grid-template-columns:1fr 1fr;padding:11px 12px;gap:8px}
+  .image-row button{width:100%;padding:10px 8px;font-size:12px}
+  .diag-block{padding:13px 12px}
+}
+
+@media(max-width:360px){
+  .brand-mark{font-size:13px}.stat{padding:4px 5px}.streak-badge{padding:4px 5px}.acct-avatar{width:29px;height:29px}
+  .tool-grid{gap:7px}.tool-card{min-height:142px;padding:11px 9px}.tool-name{font-size:12.5px}
+}

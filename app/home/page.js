@@ -16,55 +16,50 @@ const ACHIEVEMENTS = [
 
 const TOOLS = [
   {
-    href: '/daily', icon: '⚡', name: '10-Minuten-Training',
-    desc: 'Ihre tägliche persönliche Challenge: fünf Fragen, Streak, Ligapunkte und Zertifikat.',
-    tag: 'Heute · Kostenlos'
-  },
-  {
-    href: '/coach', icon: '🧠', name: 'Persönlicher AI-Lerncoach',
-    desc: 'Analysiert Ihre Fehler und erstellt daraus einen konkreten individuellen 7-Tage-Lernplan.',
-    tag: 'Individueller Lernweg'
-  },
-  {
     href: '/game', icon: '🦷', name: 'Patientengespräch',
     desc: 'Anamnese erheben, Röntgenbild anfordern, Diagnose stellen — danach 20 Prüfungsfragen zum Fall.',
-    tag: 'Teil 1 · Kernübung'
+    tag: 'Teil 1 · Kernübung', category: 'prüfung'
   },
   {
     href: '/tools/befund', icon: '🩻', name: 'Befund-Training',
     desc: 'Echte Röntgenbilder befunden. Ihre Beschreibung wird gegen den tatsächlichen Befund geprüft.',
-    tag: 'Röntgen lesen'
+    tag: 'Röntgen lesen', category: 'klinik'
   },
   {
     href: '/tools/arztbrief', icon: '✍️', name: 'Arztbrief',
     desc: 'Den schriftlichen Teil üben. Bewertung nach Struktur, Fachsprache, Vollständigkeit und Grammatik.',
-    tag: 'Teil 2 · Schriftlich'
+    tag: 'Teil 2 · Schriftlich', category: 'prüfung'
   },
   {
     href: '/tools/kollege', icon: '👨‍⚕️', name: 'Arzt-Arzt-Gespräch',
     desc: 'Den Fall einem Oberarzt vorstellen. Er hakt nach, sobald etwas fehlt oder zu umgangssprachlich klingt.',
-    tag: 'Teil 3 · Fallübergabe'
+    tag: 'Teil 3 · Fallübergabe', category: 'prüfung'
   },
   {
     href: '/tools/fachbegriffe', icon: '📇', name: 'Fachbegriffe',
     desc: 'Fachwort auf der einen Seite, Patientensprache auf der anderen. Karten drehen sich, Sätze inklusive.',
-    tag: 'Vokabeln'
+    tag: 'Vokabeln', category: 'sprache'
   },
   {
     href: '/tools/aussprache', icon: '🎙️', name: 'Aussprache',
     desc: 'Satz anhören, nachsprechen, Wort für Wort vergleichen. Sie sehen, welches Wort nicht angekommen ist.',
-    tag: 'Sprechen'
+    tag: 'Sprechen', category: 'sprache'
   },
   {
     href: '/tools/test', icon: '📝', name: 'Testmodus',
     desc: 'Schnelle Multiple-Choice-Runde über alle Themen — ohne Patientenfall, ideal zum Aufwärmen.',
-    tag: 'Schnelltest'
+    tag: 'Schnelltest', category: 'klinik'
   },
   {
     href: '/mistakes', icon: '📌', name: 'Meine Fehler',
     desc: 'Alle bisherigen Fehler an einem Ort — lesen, verstehen, als gelernt markieren.',
-    tag: 'Lernen aus Fehlern'
+    tag: 'Lernen aus Fehlern', category: 'fortschritt'
   }
+];
+
+const TOOL_FILTERS = [
+  ['alle', 'Alle'], ['prüfung', 'Prüfung'], ['klinik', 'Klinik'],
+  ['sprache', 'Sprache'], ['fortschritt', 'Fortschritt']
 ];
 
 export default function Home() {
@@ -72,6 +67,7 @@ export default function Home() {
   const [profile, setProfile] = useState(null);
   const [leaderboard, setLeaderboard] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [toolFilter, setToolFilter] = useState('alle');
 
   useEffect(() => {
     let mounted = true;
@@ -136,9 +132,17 @@ export default function Home() {
           <a href="/coach"><span>🧠</span><div><b>Ihr persönlicher Lernplan</b><small>AI-Coach analysiert Ihre Fehler</small></div><em>Öffnen →</em></a>
         </div>
 
-        <div className="section-title">Übungen</div>
+        <div className="section-heading-row">
+          <div className="section-title">Übungen</div>
+          <span>{toolFilter === 'alle' ? TOOLS.length : TOOLS.filter(t => t.category === toolFilter).length} Tools</span>
+        </div>
+        <div className="tool-filters" aria-label="Übungen filtern">
+          {TOOL_FILTERS.map(([value, label]) => (
+            <button key={value} className={toolFilter === value ? 'active' : ''} onClick={() => setToolFilter(value)}>{label}</button>
+          ))}
+        </div>
         <div className="tool-grid">
-          {TOOLS.map(t => (
+          {TOOLS.filter(t => toolFilter === 'alle' || t.category === toolFilter).map(t => (
             <TiltCard as="a" className="tool-card" href={t.href} key={t.href}>
               <div className="tool-icon">{t.icon}</div>
               <div className="tool-name">{t.name}</div>

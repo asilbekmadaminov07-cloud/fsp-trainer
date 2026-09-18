@@ -43,7 +43,7 @@ export default function Header({ profile, backHref }){
         <div className="stats">
           <span className="stat coins" title="Praxiskonto">💰 <b>{profile.coins ?? 0}</b></span>
           <span className="stat level" title="Stufe">⭐ <b>{profile.level ?? 1}</b></span>
-          <span className="streak-badge" title="An diesen Tagen geübt">🔥 {practiceDays} Tage</span>
+          <span className="streak-badge" title="An diesen Tagen geübt">🔥 <b>{practiceDays}</b><span className="streak-word">Tage</span></span>
 
           <div className="acct" ref={boxRef}>
             <button className="acct-menu-btn" onClick={() => setOpen(o => !o)} aria-label="Konto">
