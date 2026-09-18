@@ -2,17 +2,32 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
+import { touchPracticeDay } from '@/lib/practice';
+import Header from '@/app/components/Header';
 
 // Barcha vositalar uchun umumiy ramka: tepa panel, sarlavha, orqaga havola.
 export default function ToolShell({ title, lead, children }) {
   const router = useRouter();
+  const [profile, setProfile] = useState(null);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
     let alive = true;
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(async ({ data }) => {
       if (!alive) return;
       if (!data.session) { router.replace('/login'); return; }
+      const { data: prof, error } = await supabase
+        .from('profiles').select('*').eq('id', data.session.user.id).single();
+      let currentProfile = prof;
+      if (error || !prof) {
+        const { data: created } = await supabase.from('profiles').insert({
+          id: data.session.user.id, full_name: data.session.user.email, coins: 100, xp: 0
+        }).select().single();
+        currentProfile = created;
+      }
+      if (!alive) return;
+      setProfile(currentProfile);
+      touchPracticeDay(currentProfile).then(updated => { if (alive && updated) setProfile(updated); });
       setReady(true);
     });
     return () => { alive = false; };
@@ -22,13 +37,7 @@ export default function ToolShell({ title, lead, children }) {
 
   return (
     <>
-      <div className="topbar">
-        <div className="topbar-inner">
-          <a href="/home" className="brand-mark">
-            FSP<span style={{ color: 'var(--brand)' }}>.</span>Trainer
-          </a>
-        </div>
-      </div>
+      <Header profile={profile} />
       <div className="tool-shell">
         <a href="/home" className="back-link">← Zurück zur Übersicht</a>
         <div className="tool-head">

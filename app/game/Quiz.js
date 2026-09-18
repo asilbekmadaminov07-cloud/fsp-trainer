@@ -1,12 +1,13 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabaseClient';
 
 // 20 ta savolli imtihon.
 // Qoida: 3-xato — imtihon tugaydi va boshidan boshlanadi.
 // Ya'ni o'tish uchun kamida 18/20 kerak.
 const MAX_WRONG = 3;
 
-export default function Quiz({ currentCase, transcript, onPassed, onClose }) {
+export default function Quiz({ currentCase, transcript, onPassed, onClose, userId }) {
   const [questions, setQuestions] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -53,6 +54,21 @@ export default function Quiz({ currentCase, transcript, onPassed, onClose }) {
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [attempt]);
+
+  // Imtihon tugagach (o'tildi yoki yiqildi), xato javoblarni "Mening xatolarim" ga saqlaymiz.
+  useEffect(() => {
+    if ((status !== 'passed' && status !== 'failed') || !userId || wrong.length === 0) return;
+    supabase.from('mistakes').insert(wrong.map(w => ({
+      user_id: userId,
+      case_name: currentCase?.name || null,
+      difficulty: currentCase?.difficulty || null,
+      question: w.q,
+      chosen: w.chosen,
+      correct: w.correct,
+      explanation: w.explanation
+    }))).then(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status]);
 
   function restart(){
     setIdx(0); setSelected(null); setRevealed(false);

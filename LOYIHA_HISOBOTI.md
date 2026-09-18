@@ -1,7 +1,33 @@
 # FSP Trainer — Loyiha hisoboti
 
 > **Yangi suhbatda davom ettirish uchun:** shu faylni yuklang va "shu loyihani davom ettiramiz" deb yozing.
-> Oxirgi yangilanish: 2026-09-17
+> Oxirgi yangilanish: 2026-09-18
+
+## 0. OXIRGI SESSIYADA QILINGAN ISHLAR (2026-09-18)
+
+10 ta talab bo'yicha katta yangilanish qilindi:
+
+1. **"Mening xatolarim" sahifasi** (`/mistakes`) — imtihon yoki testda xato javob berilgan har bir savol `mistakes` jadvaliga saqlanadi. Sahifada filtrlash (ochiq/o'rganilgan/hammasi) va "gelernt" deb belgilash mumkin.
+2. **Mobil interfeys** yaxshilandi — header, forma, savol bloklari kichik ekranlarda qayta tuzildi (`app/globals.css` oxiridagi `@media(max-width:560px)`).
+3. **Tasodifiy bemor/savollar** — bu allaqachon mavjud edi (`pickRandomIdx`, va `/api/quiz` har safar yangi savol yaratadi). Testmodus ham har safar yangi, tasodifiy mavzular bilan yaratiladi.
+4-5. **Dizayn**: fon va brend rangi baby-blue palitraga o'zgartirildi (`app/globals.css` `:root` — `--bg`, `--brand*`). Qorong'u rejim ham mos ravishda yangilandi.
+6-7. **Header** (`app/components/Header.js`) — barcha sahifalarda bitta umumiy tepa panel: avatar, ism, email, tanga/daraja, "necha kun mashq qilingan" (🔥 belgi) va account dropdown ichida "necha kundan beri a'zo" (`created_at` dan hisoblanadi, `lib/practice.js`).
+8. **3D effektlar** — `.tilt-3d`, `.float-3d`, avatar hover'da 3D burilish (`app/globals.css`), tool-card'larda avvaldan bor 3D hover kuchaytirildi.
+9. **CAPTCHA** — Google reCAPTCHA v2, faqat `/register` sahifasida. `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` sozlanmasa, captcha ko'rsatilmaydi va ro'yxatdan o'tish bloklanmaydi (ishlab chiqarishdan oldin kalitlarni albatta qo'shing — 3-bo'limga qarang).
+10. **Testmodus** (`/tools/test`) — bemor holatisiz, umumiy FSP bilimi bo'yicha tezkor 10 savolli test (`/api/test-quiz`). Xatolar ham "Mening xatolarim"ga tushadi.
+
+**Email xush kelibsiz xabari — HALI QO'SHILMAGAN** (foydalanuvchi so'rovi bilan keyinga qoldirildi). Kerak bo'lsa Resend yoki Supabase Auth email shablonini sozlash kerak bo'ladi.
+
+**MUHIM — yangi SQL migratsiyasini ishga tushiring:** `supabase/migration_v2.sql` (profiles'ga `practice_days`/`last_practice_date`, va yangi `mistakes` jadvali). Supabase SQL Editor'da ishga tushiring, aks holda header va xatolar sahifasi ishlamaydi.
+
+**Yangi environment o'zgaruvchilar** (ixtiyoriy, CAPTCHA uchun): `.env.local` va Vercel'ga qo'shing:
+```
+NEXT_PUBLIC_RECAPTCHA_SITE_KEY=...
+RECAPTCHA_SECRET_KEY=...
+```
+Kalitlarni https://www.google.com/recaptcha/admin (reCAPTCHA v2 "I'm not a robot" checkbox) dan oling.
+
+Lokal ishga tushirish uchun `.claude/launch.json` qo'shildi (`npm run dev`, port 3000).
 
 ---
 

@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { levelFromXp, careerStage } from '@/lib/career';
+import { touchPracticeDay, daysSince } from '@/lib/practice';
+import Header from '@/app/components/Header';
 
 const ACHIEVEMENTS = [
   { id: 'first_case', title: 'Erste Diagnose bestanden', need: 1 },
@@ -41,6 +43,16 @@ const TOOLS = [
     href: '/tools/aussprache', icon: '🎙️', name: 'Aussprache',
     desc: 'Satz anhören, nachsprechen, Wort für Wort vergleichen. Sie sehen, welches Wort nicht angekommen ist.',
     tag: 'Sprechen'
+  },
+  {
+    href: '/tools/test', icon: '📝', name: 'Testmodus',
+    desc: 'Schnelle Multiple-Choice-Runde über alle Themen — ohne Patientenfall, ideal zum Aufwärmen.',
+    tag: 'Schnelltest'
+  },
+  {
+    href: '/mistakes', icon: '📌', name: 'Meine Fehler',
+    desc: 'Alle bisherigen Fehler an einem Ort — lesen, verstehen, als gelernt markieren.',
+    tag: 'Lernen aus Fehlern'
   }
 ];
 
@@ -68,6 +80,7 @@ export default function Home() {
       }
       if (!mounted) return;
       setProfile(currentProfile);
+      touchPracticeDay(currentProfile).then(updated => { if (mounted && updated) setProfile(updated); });
 
       const { data: board } = await supabase
         .from('profiles').select('id, full_name, xp, level')
@@ -78,11 +91,6 @@ export default function Home() {
     return () => { mounted = false; };
   }, [router]);
 
-  async function handleLogout(){
-    await supabase.auth.signOut();
-    router.replace('/');
-  }
-
   if (loading || !profile) return null;
 
   const xp = profile.xp || 0;
@@ -91,18 +99,12 @@ export default function Home() {
   const inLevel = xp % 150;
   const solved = profile.cases_solved || 0;
 
+  const memberDays = daysSince(profile.created_at);
+  const practiceDays = profile.practice_days || 0;
+
   return (
     <>
-      <div className="topbar">
-        <div className="topbar-inner">
-          <span className="brand-mark">FSP<span style={{ color: 'var(--brand)' }}>.</span>Trainer</span>
-          <div className="stats">
-            <span className="stat coins">Praxiskonto <b>{profile.coins ?? 0}</b></span>
-            <span className="stat level">Stufe <b>{level}</b></span>
-            <button className="logout-btn" onClick={handleLogout}>Abmelden</button>
-          </div>
-        </div>
-      </div>
+      <Header profile={profile} />
 
       <div className="game-shell">
         <div className="hero-card">
@@ -112,6 +114,8 @@ export default function Home() {
           <div className="hero-meta">
             <span>{inLevel} / 150 Erfahrung bis Stufe {level + 1}</span>
             <span>{solved} Fälle gelöst</span>
+            <span>{practiceDays} Tage geübt</span>
+            <span>Mitglied seit {memberDays} Tagen</span>
             {stage.next && <span>Nächster Rang: {stage.next.title}</span>}
           </div>
         </div>

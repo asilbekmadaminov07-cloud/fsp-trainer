@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { CASES, DIFFS, DIFF_REWARDS, IMAGES, COMMON_PATIENT_INSTRUCTIONS } from '@/lib/cases';
 import { levelFromXp, careerStage } from '@/lib/career';
+import { touchPracticeDay } from '@/lib/practice';
+import Header from '@/app/components/Header';
 import {
   speakNatural, stopSpeaking, pickVoice,
   unlockAudio, hasSpeechRecognition, hasRecorder, startRecording, transcribeAudio
@@ -140,14 +142,15 @@ export default function Game() {
         .eq('id', data.session.user.id)
         .single();
       if (!mounted) return;
+      let currentProfile = prof;
       if (error || !prof) {
         const { data: created } = await supabase.from('profiles').insert({
           id: data.session.user.id, full_name: data.session.user.email, coins: 100, xp: 0
         }).select().single();
-        setProfile(created);
-      } else {
-        setProfile(prof);
+        currentProfile = created;
       }
+      setProfile(currentProfile);
+      touchPracticeDay(currentProfile).then(updated => { if (mounted && updated) setProfile(updated); });
       setLoadingProfile(false);
     });
     return () => { mounted = false; };
@@ -491,17 +494,7 @@ export default function Game() {
 
   return (
     <>
-      <div className="topbar">
-        <div className="topbar-inner">
-          <a href="/home" className="brand-mark" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontSize: 14 }}>←</span> FSP<span style={{ color: 'var(--brand)' }}>.</span>Trainer
-          </a>
-          <div className="stats">
-            <span className="stat coins">Praxiskonto: <b>{profile.coins ?? 0}</b></span>
-            <span className="stat">{profile.full_name}</span>
-          </div>
-        </div>
-      </div>
+      <Header profile={profile} backHref="/home" />
 
       <div className="game-shell">
         <div className="difficulty-row">
@@ -550,6 +543,7 @@ export default function Game() {
                 transcript={quizTranscript()}
                 onPassed={handleQuizPassed}
                 onClose={() => { setShowQuiz(false); newCase(); }}
+                userId={profile.id}
               />
             ) : (
             <>

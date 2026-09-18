@@ -21,6 +21,9 @@ yarn-error.log*
 # Vercel
 .vercel
 
+# Claude Code mahalliy preview sozlamasi
+/.claude/
+
 # tekshiruv uchun vaqtinchalik rasmlar
 /_preview/
 
