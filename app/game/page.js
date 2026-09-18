@@ -2,8 +2,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
+import { apiPost, apiGet } from '@/lib/api';
 import { CASES, DIFFS, DIFF_REWARDS, IMAGES, COMMON_PATIENT_INSTRUCTIONS } from '@/lib/cases';
 import { levelFromXp, careerStage } from '@/lib/career';
+import { markPracticeToday } from '@/lib/streak';
 import {
   speakNatural, stopSpeaking, pickVoice,
   unlockAudio, hasSpeechRecognition, hasRecorder, startRecording, transcribeAudio
@@ -21,8 +23,7 @@ function CaseImage({ imageKey, commonsFile }) {
     let alive = true;
     setInfo(null);
     setFailed(false);
-    fetch('/api/case-image?file=' + encodeURIComponent(commonsFile))
-      .then(r => r.ok ? r.json() : Promise.reject(new Error('nicht verfügbar')))
+    apiGet('/api/case-image?file=' + encodeURIComponent(commonsFile))
       .then(d => { if (alive) setInfo(d); })
       .catch(() => { if (alive) setFailed(true); });
     return () => { alive = false; };
@@ -147,6 +148,7 @@ export default function Game() {
         setProfile(created);
       } else {
         setProfile(prof);
+        markPracticeToday(prof).then(p => { if (mounted && p) setProfile(p); });
       }
       setLoadingProfile(false);
     });
@@ -260,16 +262,10 @@ export default function Game() {
     setAiLoading(true);
     setAiError('');
     try {
-      const res = await fetch('/api/case', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          difficulty: currentDiff,
-          exclude: CASES.filter(c => c.difficulty === currentDiff).map(c => c.name)
-        })
+      const d = await apiPost('/api/case', {
+        difficulty: currentDiff,
+        exclude: CASES.filter(c => c.difficulty === currentDiff).map(c => c.name)
       });
-      const d = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(d.error || 'Fall konnte nicht erstellt werden');
       setAiCase(d.case);
       beginCase(d.case);
     } catch (e) {
@@ -279,13 +275,7 @@ export default function Game() {
   }
 
   async function callGemini(messages, system, maxTokens){
-    const res = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ system, messages, maxTokens: maxTokens || 300 })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Server xatosi');
+    const data = await apiPost('/api/chat', { system, messages, maxTokens: maxTokens || 300 });
     return data.text || '';
   }
 
@@ -497,7 +487,10 @@ export default function Game() {
             <span style={{ fontSize: 14 }}>←</span> FSP<span style={{ color: 'var(--brand)' }}>.</span>Trainer
           </a>
           <div className="stats">
-            <span className="stat coins">Praxiskonto: <b>{profile.coins ?? 0}</b></span>
+            {(profile.streak_days || 0) > 0 && (
+              <span className="streak" title="Aufeinanderfolgende Übungstage">🔥 {profile.streak_days}</span>
+            )}
+            <span className="stat coins">Praxiskonto <b>{profile.coins ?? 0}</b></span>
             <span className="stat">{profile.full_name}</span>
           </div>
         </div>

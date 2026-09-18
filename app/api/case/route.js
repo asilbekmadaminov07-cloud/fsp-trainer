@@ -8,6 +8,8 @@
 // POST { difficulty, exclude?: [ismlar] }
 // → { case: {...}, generated: true }
 
+import { guard } from '@/lib/apiGuard';
+
 import { verifiedFindings } from '@/lib/findings';
 
 export const maxDuration = 60;
@@ -72,6 +74,9 @@ const SCHEMA = {
 function pick(arr){ return arr[Math.floor(Math.random() * arr.length)]; }
 
 export async function POST(req) {
+  const gate = await guard(req, 'case');
+  if (gate.error) return Response.json({ error: gate.error }, { status: gate.status });
+
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return Response.json({ error: 'GEMINI_API_KEY sozlanmagan.' }, { status: 500 });
 

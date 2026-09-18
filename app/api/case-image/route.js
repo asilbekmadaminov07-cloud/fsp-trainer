@@ -4,6 +4,8 @@
 // GET /api/case-image?file=File:Gingivitis-before.JPG
 // → { url, thumb, width, height, license, artist, title, source }
 
+import { guard } from '@/lib/apiGuard';
+
 const API = 'https://commons.wikimedia.org/w/api.php';
 const UA = 'FSP-Trainer/1.0 (educational dental exam trainer)';
 
@@ -24,6 +26,9 @@ function stripHtml(s){
 }
 
 export async function GET(req) {
+  const gate = await guard(req, 'case-image');
+  if (gate.error) return Response.json({ error: gate.error }, { status: gate.status });
+
   const { searchParams } = new URL(req.url);
   let file = searchParams.get('file');
   if (!file) return Response.json({ error: 'file parametri kerak' }, { status: 400 });

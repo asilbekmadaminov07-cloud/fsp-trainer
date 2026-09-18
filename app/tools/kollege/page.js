@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { CASES } from '@/lib/cases';
+import { apiPost } from '@/lib/api';
 import ToolShell from '../ToolShell';
 
 // FSP 3-qism: Arzt-Arzt-Gespräch. Hamkasbga holatni topshirish.
@@ -49,12 +50,7 @@ export default function Kollege() {
     setHistory(next);
     setSending(true);
     try {
-      const res = await fetch('/api/chat', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ system: systemFor(c), messages: next, maxTokens: 300 })
-      });
-      const d = await res.json();
-      if (!res.ok) throw new Error(d.error || 'Fehler');
+      const d = await apiPost('/api/chat', { system: systemFor(c), messages: next, maxTokens: 300 });
       setHistory(h => [...h, { role: 'assistant', content: d.text || '…' }]);
     } catch (e) {
       setHistory(h => [...h, { role: 'assistant', content: '[Verbindungsfehler — bitte erneut versuchen]' }]);

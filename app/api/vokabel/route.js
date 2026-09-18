@@ -4,6 +4,8 @@
 // POST { topic?, count? }
 // → { cards: [{ fach, laie, erklaerung, beispielsatz }] }
 
+import { guard } from '@/lib/apiGuard';
+
 export const maxDuration = 60;
 
 const TOPICS = [
@@ -40,6 +42,9 @@ const SCHEMA = {
 };
 
 export async function POST(req) {
+  const gate = await guard(req, 'vokabel');
+  if (gate.error) return Response.json({ error: gate.error }, { status: gate.status });
+
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return Response.json({ error: 'GEMINI_API_KEY sozlanmagan.' }, { status: 500 });
 
@@ -94,6 +99,9 @@ Alles auf Deutsch. Kein Markdown. Keine Wiederholungen innerhalb der Liste.`;
   }
 }
 
-export async function GET() {
+export async function GET(req) {
+  const gate = await guard(req, 'vokabel');
+  if (gate.error) return Response.json({ error: gate.error }, { status: gate.status });
+
   return Response.json({ topics: TOPICS });
 }

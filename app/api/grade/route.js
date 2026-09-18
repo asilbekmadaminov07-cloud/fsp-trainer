@@ -3,6 +3,8 @@
 // POST { task: 'arztbrief' | 'befund', text, context }
 // → { score, max, summary, good: [...], bad: [...], corrected }
 
+import { guard } from '@/lib/apiGuard';
+
 export const maxDuration = 60;
 
 const TASKS = {
@@ -55,6 +57,9 @@ const SCHEMA = {
 };
 
 export async function POST(req) {
+  const gate = await guard(req, 'grade');
+  if (gate.error) return Response.json({ error: gate.error }, { status: gate.status });
+
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return Response.json({ error: 'GEMINI_API_KEY sozlanmagan.' }, { status: 500 });
 

@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { CASES } from '@/lib/cases';
+import { apiPost } from '@/lib/api';
 import ToolShell, { Feedback } from '../ToolShell';
 
 const TEMPLATE = `Sehr geehrte Frau Kollegin, sehr geehrter Herr Kollege,
@@ -29,17 +30,11 @@ export default function Arztbrief() {
   async function grade(){
     setLoading(true); setError(''); setResult(null);
     try {
-      const res = await fetch('/api/grade', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          task: 'arztbrief',
-          text,
-          context: `Patient: ${c.name} (${c.meta})\nKorrekte Diagnose: ${c.diagnosis}\nRöntgenbefund: ${c.imageContent}`
-        })
-      });
-      const d = await res.json();
-      if (!res.ok) throw new Error(d.error || 'Bewertung fehlgeschlagen');
-      setResult(d);
+      setResult(await apiPost('/api/grade', {
+        task: 'arztbrief',
+        text,
+        context: `Patient: ${c.name} (${c.meta})\nKorrekte Diagnose: ${c.diagnosis}\nRöntgenbefund: ${c.imageContent}`
+      }));
     } catch (e) { setError(e.message); }
     setLoading(false);
   }

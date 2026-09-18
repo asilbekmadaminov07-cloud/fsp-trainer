@@ -1,4 +1,9 @@
+import { guard } from '@/lib/apiGuard';
+
 export async function POST(req) {
+  const gate = await guard(req, 'tts');
+  if (gate.error) return Response.json({ error: gate.error }, { status: gate.status });
+
   const apiKey = process.env.ELEVENLABS_API_KEY;
   if (!apiKey) {
     return new Response(JSON.stringify({ error: 'ELEVENLABS_API_KEY sozlanmagan (.env.local faylini tekshiring).' }), {

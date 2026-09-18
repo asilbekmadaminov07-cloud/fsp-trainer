@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { apiPost } from '@/lib/api';
 
 // 20 ta savolli imtihon.
 // Qoida: 3-xato — imtihon tugaydi va boshidan boshlanadi.
@@ -24,22 +25,13 @@ export default function Quiz({ currentCase, transcript, onPassed, onClose }) {
     setLoading(true);
     setError('');
     setQuestions(null);
-    fetch('/api/quiz', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        caseName: currentCase.name,
-        meta: currentCase.meta,
-        diagnosis: currentCase.diagnosis,
-        difficulty: currentCase.difficulty,
-        transcript
-      })
+    apiPost('/api/quiz', {
+      caseName: currentCase.name,
+      meta: currentCase.meta,
+      diagnosis: currentCase.diagnosis,
+      difficulty: currentCase.difficulty,
+      transcript
     })
-      .then(async r => {
-        const d = await r.json().catch(() => ({}));
-        if (!r.ok) throw new Error(d.error || 'Fragen konnten nicht geladen werden');
-        return d;
-      })
       .then(d => {
         if (!alive) return;
         setQuestions(d.questions);
@@ -73,6 +65,7 @@ export default function Quiz({ currentCase, transcript, onPassed, onClose }) {
       const next = [...wrong, {
         nr: idx + 1,
         q: q.q,
+        topic: q.topic || '',
         chosen: q.options[selected],
         correct: q.options[q.correct],
         explanation: q.explanation
@@ -195,6 +188,17 @@ export default function Quiz({ currentCase, transcript, onPassed, onClose }) {
       {revealed && (
         <div className={'quiz-feedback ' + (selected === q.correct ? 'ok' : 'bad')}>
           <b>{selected === q.correct ? 'Richtig.' : 'Falsch.'}</b> {q.explanation}
+          {selected !== q.correct && (
+            <div>
+              <a className="learn-btn" target="_blank" rel="noreferrer"
+                 href={'/lernen?' + new URLSearchParams({
+                   thema: q.topic || '', frage: q.q,
+                   falsch: q.options[selected], richtig: q.options[q.correct]
+                 }).toString()}>
+                Thema verstehen →
+              </a>
+            </div>
+          )}
         </div>
       )}
 
@@ -211,6 +215,14 @@ export default function Quiz({ currentCase, transcript, onPassed, onClose }) {
 }
 
 function MistakeList({ wrong }) {
+  function lessonHref(w){
+    const p = new URLSearchParams();
+    if (w.topic) p.set('thema', w.topic);
+    p.set('frage', w.q);
+    p.set('falsch', w.chosen);
+    p.set('richtig', w.correct);
+    return '/lernen?' + p.toString();
+  }
   return (
     <div className="quiz-mistakes">
       {wrong.map((w, i) => (
@@ -220,6 +232,9 @@ function MistakeList({ wrong }) {
           <div className="qm-line bad">Ihre Antwort: {w.chosen}</div>
           <div className="qm-line good">Richtig wäre: {w.correct}</div>
           <div className="qm-exp">{w.explanation}</div>
+          <a className="learn-btn" href={lessonHref(w)} target="_blank" rel="noreferrer">
+            Thema verstehen →
+          </a>
         </div>
       ))}
     </div>

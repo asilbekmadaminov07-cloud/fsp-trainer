@@ -5,6 +5,8 @@
 // POST { caseName, meta, diagnosis, difficulty, transcript }
 // → { questions: [{ q, options: [4 ta], correct: 0-3, explanation, topic }] }
 
+import { guard } from '@/lib/apiGuard';
+
 export const maxDuration = 60;
 
 const TOPICS = [
@@ -101,6 +103,9 @@ function sanitize(list){
 }
 
 export async function POST(req) {
+  const gate = await guard(req, 'quiz');
+  if (gate.error) return Response.json({ error: gate.error }, { status: gate.status });
+
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     return Response.json({ error: 'GEMINI_API_KEY sozlanmagan.' }, { status: 500 });

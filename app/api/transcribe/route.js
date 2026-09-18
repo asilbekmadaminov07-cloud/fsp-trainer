@@ -2,9 +2,14 @@
 // qo'llab-quvvatlamaydi, shuning uchun ovoz MediaRecorder bilan yozib olinadi va shu yerda
 // Gemini orqali matnga aylantiriladi.
 
+import { guard } from '@/lib/apiGuard';
+
 export const maxDuration = 60;
 
 export async function POST(req) {
+  const gate = await guard(req, 'transcribe');
+  if (gate.error) return Response.json({ error: gate.error }, { status: gate.status });
+
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     return Response.json({ error: 'GEMINI_API_KEY sozlanmagan (.env.local faylini tekshiring).' }, { status: 500 });

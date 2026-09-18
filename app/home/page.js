@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { levelFromXp, careerStage } from '@/lib/career';
+import { accountAgeDays, streakAlive } from '@/lib/streak';
 
 const ACHIEVEMENTS = [
   { id: 'first_case', title: 'Erste Diagnose bestanden', need: 1 },
@@ -90,15 +91,28 @@ export default function Home() {
   const stage = careerStage(level);
   const inLevel = xp % 150;
   const solved = profile.cases_solved || 0;
+  const name = profile.full_name || 'Kandidat';
+  const initial = String(name).trim().charAt(0).toUpperCase() || '?';
+  const streak = profile.streak_days || 0;
+  const alive = streakAlive(profile);
+  const ageDays = accountAgeDays(profile);
 
   return (
     <>
       <div className="topbar">
         <div className="topbar-inner">
-          <span className="brand-mark">FSP<span style={{ color: 'var(--brand)' }}>.</span>Trainer</span>
+          <div className="acct">
+            <div className="acct-av">{initial}</div>
+            <div className="acct-txt">
+              <span className="acct-name">{name}</span>
+              <span className="acct-rank">{stage.title} · Stufe {level}</span>
+            </div>
+          </div>
           <div className="stats">
+            <span className={'streak' + (alive ? '' : ' cold')} title="Aufeinanderfolgende Übungstage">
+              🔥 {streak} {streak === 1 ? 'Tag' : 'Tage'}
+            </span>
             <span className="stat coins">Praxiskonto <b>{profile.coins ?? 0}</b></span>
-            <span className="stat level">Stufe <b>{level}</b></span>
             <button className="logout-btn" onClick={handleLogout}>Abmelden</button>
           </div>
         </div>
@@ -111,8 +125,13 @@ export default function Home() {
           <div className="xp-track"><div className="xp-fill" style={{ width: Math.min(100, inLevel / 150 * 100) + '%' }} /></div>
           <div className="hero-meta">
             <span>{inLevel} / 150 Erfahrung bis Stufe {level + 1}</span>
-            <span>{solved} Fälle gelöst</span>
             {stage.next && <span>Nächster Rang: {stage.next.title}</span>}
+          </div>
+          <div className="daybar">
+            <div className="daycell"><b>{streak}</b><span>Tage in Folge</span></div>
+            <div className="daycell"><b>{profile.total_practice_days || 0}</b><span>Übungstage gesamt</span></div>
+            <div className="daycell"><b>{ageDays}</b><span>Tage dabei</span></div>
+            <div className="daycell"><b>{solved}</b><span>Fälle gelöst</span></div>
           </div>
         </div>
 
