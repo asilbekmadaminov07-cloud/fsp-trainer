@@ -16,10 +16,10 @@ import { verifiedFindings } from '@/lib/findings';
 export const maxDuration = 60;
 
 const LEVEL_BRIEF = {
-  leicht: 'Einsteigerniveau. Ein klares Leitsymptom, keine relevanten Vorerkrankungen, eindeutige Diagnose. Der Patient ist kooperativ und antwortet verständlich.',
-  mittel: 'Mittleres Niveau. Eine Begleitumstand oder Vorerkrankung, die der Kandidat erfragen muss. Zwei plausible Differentialdiagnosen.',
-  schwer: 'Fortgeschritten. Relevante Allgemeinerkrankung oder Dauermedikation, die die zahnärztliche Behandlung ändert. Der Patient nennt sie NUR auf gezielte Nachfrage.',
-  pro: 'Expertenniveau. Entweder eine nicht-odontogene Ursache, die wie ein Zahnproblem aussieht, oder ein Hochrisikopatient (Antikoagulation, Herzklappe, Bisphosphonate, Immunsuppression, Malignitätsverdacht). Der Fall enthält eine Falle, die nur durch vollständige Anamnese auffällt.'
+  leicht: 'Einsteigerniveau. Ein klares Leitsymptom, eindeutige Diagnose. Mindestens 3 sinnvolle Anamnesefragen sind nötig.',
+  mittel: 'Mittleres Niveau. Ein relevanter Begleitumstand und zwei plausible Differentialdiagnosen. Mindestens 5 gezielte Anamnesefragen sind nötig.',
+  schwer: 'Fortgeschritten. Allgemeinerkrankung oder Dauermedikation ändert die Behandlung. Mindestens 7 gezielte Fragen sind nötig; die entscheidende Angabe bleibt bis zur passenden Frage verborgen.',
+  pro: 'Expertenniveau. Nicht-odontogene Ursache oder Hochrisikopatient mit klinischer Falle. Mindestens 9 gezielte Fragen aus Schmerz-, Allgemein-, Medikamenten-, Risiko- und Sozialanamnese sind nötig.'
 };
 
 function buildSystem(){
@@ -36,6 +36,9 @@ DER PATIENT ("system"-Feld) — das ist eine Rollenanweisung für ein Sprachmode
 - Deutscher Name, Alter, Beruf. Realistisch für Deutschland, gern auch Migrationshintergrund.
 - Beschwerden in Laiensprache, NIEMALS Fachbegriffe.
 - Die entscheidenden Informationen (Vorerkrankungen, Medikamente, Allergien, Rauchen, Alkohol, Schwangerschaft, frühere Behandlungen) werden NUR genannt, wenn der Kandidat konkret danach fragt. Schreibe das ausdrücklich in die Rollenanweisung.
+- Baue den Fall wie einen echten Praxisbesuch auf: Leitsymptom → Schmerzcharakter/Verlauf → Begleitsymptome → zahnärztliche Vorgeschichte → Allgemein- und Medikamentenanamnese → Patientensorge.
+- Das Gespräch muss 15-20 Arztfragen konsistent aushalten. Gib pro Antwort höchstens einen neuen klinischen Hinweis preis.
+- Formuliere 2-3 realistische Rückfragen oder Sorgen, die der Patient erst nach Diagnose oder Therapieempfehlung stellen kann.
 - Eine Persönlichkeit: ängstlich, ungeduldig, bagatellisierend, gesprächig, misstrauisch, dankbar — verschieden pro Fall.
 - Endet mit: "Antworte NUR auf Deutsch, einfache Umgangssprache, kurze Antworten (1-3 Sätze), Details nur auf Nachfrage."
 

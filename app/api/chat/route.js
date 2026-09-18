@@ -18,7 +18,7 @@ export async function POST(req) {
     return Response.json({ error: 'Es wurden keine Nachrichten übergeben.' }, { status: 400 });
   }
 
-  if (messages.length > 40 || messages.some(m => typeof m?.content !== 'string' || m.content.length > 4000)) {
+  if (messages.length > 80 || messages.some(m => typeof m?.content !== 'string' || m.content.length > 4000)) {
     return Response.json({ error: 'Die Unterhaltung ist zu lang.' }, { status: 400 });
   }
   if (system && (typeof system !== 'string' || system.length > 8000)) {

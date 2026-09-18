@@ -47,6 +47,7 @@ function CaseImage({ imageKey, commonsFile }) {
       </div>
       <div className="img-credit">
         {info.artist ? info.artist + ' · ' : ''}{info.license}
+        {info.full && <> · <a href={info.full} target="_blank" rel="noreferrer">Röntgen vergrößern</a></>}
         {info.source && <> · <a href={info.source} target="_blank" rel="noreferrer">Quelle</a></>}
       </div>
     </>
@@ -362,9 +363,13 @@ export default function Game() {
     const prof = stateRef.current.profile;
     const hist = stateRef.current.history;
     if (!diagnosisText || !diagnosisText.trim() || !c) return;
-    if (hist.length < 2) {
-      if (activeRef.current) await speak('Bitte stellen Sie mir zuerst noch ein paar Fragen, bevor Sie eine Diagnose nennen.');
-      else alert('Führen Sie zuerst ein paar Frage-Antwort-Runden mit dem Patienten.');
+    const doctorQuestions = hist.filter(message => message.role === 'user').length;
+    const requiredQuestions = { leicht: 3, mittel: 5, schwer: 7, pro: 9 }[stateRef.current.currentDiff] || 3;
+    if (doctorQuestions < requiredQuestions) {
+      const missing = requiredQuestions - doctorQuestions;
+      const hint = `Die Anamnese ist noch nicht vollständig. Stellen Sie mindestens ${missing} weitere gezielte ${missing === 1 ? 'Frage' : 'Fragen'}, bevor Sie die Diagnose abgeben.`;
+      if (activeRef.current) await speak(hint);
+      else alert(hint);
       return;
     }
 
