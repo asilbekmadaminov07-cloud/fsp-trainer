@@ -8,7 +8,10 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="de">
-      <body>{children}</body>
+      <body>
+        <div className="orbs" aria-hidden="true">
+          <span className="orb a" /><span className="orb b" /><span className="orb c" />
+        </div>{children}</body>
     </html>
   );
 }

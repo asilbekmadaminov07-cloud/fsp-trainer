@@ -2,6 +2,9 @@
 // tekshiruvchi 10 ta savol. Har so'rovda mavzular tasodifiy tanlanadi —
 // shu bilan har safar boshqacha test chiqadi.
 
+import { callGemini, geminiMessage } from '@/lib/gemini';
+import { guard } from '@/lib/apiGuard';
+
 export const maxDuration = 60;
 
 const ALL_TOPICS = [
@@ -80,9 +83,12 @@ function pickTopics(){
 }
 
 export async function POST(req) {
+  const gate = await guard(req, 'test-quiz');
+  if (gate.error) return Response.json({ error: gate.error }, { status: gate.status });
+
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    return Response.json({ error: 'GEMINI_API_KEY sozlanmagan.' }, { status: 500 });
+    return Response.json({ error: 'Der KI-Dienst ist nicht konfiguriert.' }, { status: 500 });
   }
 
   const topics = pickTopics();
@@ -98,25 +104,18 @@ export async function POST(req) {
   };
 
   try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
-    );
-    const data = await res.json();
-    if (!res.ok) {
-      return Response.json({ error: data.error?.message || 'Gemini API xatosi' }, { status: res.status });
-    }
+    const { data: data } = await callGemini(body, apiKey);
     const text = data.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || '';
     let parsed;
     try { parsed = JSON.parse(text); }
-    catch (e) { return Response.json({ error: 'Javobni o\'qib bo\'lmadi' }, { status: 502 }); }
+    catch (e) { return Response.json({ error: 'Die Antwort konnte nicht gelesen werden. Bitte erneut versuchen.' }, { status: 502 }); }
 
     const questions = sanitize(parsed.questions).sort(() => Math.random() - 0.5).slice(0, 10);
     if (questions.length < 5) {
-      return Response.json({ error: 'Yetarli savol yaratilmadi (' + questions.length + ')' }, { status: 502 });
+      return Response.json({ error: 'Es konnten nicht genug Fragen erstellt werden (' + questions.length + ')' }, { status: 502 });
     }
     return Response.json({ questions });
   } catch (err) {
-    return Response.json({ error: 'So\'rov bajarilmadi: ' + err.message }, { status: 500 });
+    return Response.json({ error: geminiMessage(err) }, { status: err.status || 502 });
   }
 }

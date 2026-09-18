@@ -1,4 +1,5 @@
 'use client';
+import { apiRawPost, apiRawGet } from '@/lib/api';
 import { useEffect, useRef, useState } from 'react';
 import Script from 'next/script';
 import { supabase } from '@/lib/supabaseClient';
@@ -45,10 +46,7 @@ export default function Register() {
 
       setLoading(true);
       try {
-        const vr = await fetch('/api/verify-recaptcha', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token })
-        });
+        const vr = await apiRawPost('/api/verify-recaptcha', { token });
         const vd = await vr.json();
         if (!vd.success) {
           setLoading(false);
@@ -78,7 +76,7 @@ export default function Register() {
         full_name: fullName,
         age: age ? parseInt(age, 10) : null
       });
-      if (profileError) { setLoading(false); setError('Konto yaratildi, lekin profil xatosi: ' + profileError.message); return; }
+      if (profileError) { setLoading(false); setError('Das Konto wurde angelegt, aber das Profil konnte nicht gespeichert werden: ' + profileError.message); return; }
     }
 
     setLoading(false);

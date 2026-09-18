@@ -4,6 +4,8 @@
 // GET /api/case-image?file=File:Gingivitis-before.JPG
 // → { url, thumb, width, height, license, artist, title, source }
 
+import { guard } from '@/lib/apiGuard';
+
 const API = 'https://commons.wikimedia.org/w/api.php';
 const UA = 'FSP-Trainer/1.0 (educational dental exam trainer)';
 
@@ -24,9 +26,12 @@ function stripHtml(s){
 }
 
 export async function GET(req) {
+  const gate = await guard(req, 'case-image');
+  if (gate.error) return Response.json({ error: gate.error }, { status: gate.status });
+
   const { searchParams } = new URL(req.url);
   let file = searchParams.get('file');
-  if (!file) return Response.json({ error: 'file parametri kerak' }, { status: 400 });
+  if (!file) return Response.json({ error: 'Es wurde keine Bilddatei angegeben.' }, { status: 400 });
   if (!/^File:/i.test(file)) file = 'File:' + file;
 
   // Kichikroq nusxa — mobil uchun yetarli, tez yuklanadi
@@ -46,21 +51,21 @@ export async function GET(req) {
       next: { revalidate: 86400 }
     });
     if (!res.ok) {
-      return Response.json({ error: 'Commons javob bermadi (' + res.status + ')' }, { status: 502 });
+      return Response.json({ error: 'Die Bilddatenbank antwortet nicht (' + res.status + ')' }, { status: 502 });
     }
     const data = await res.json();
     const pages = (data.query && data.query.pages) || {};
     const page = Object.values(pages)[0];
     if (!page || page.missing !== undefined) {
-      return Response.json({ error: 'Fayl topilmadi: ' + file }, { status: 404 });
+      return Response.json({ error: 'Bild nicht gefunden: ' + file }, { status: 404 });
     }
     const ii = (page.imageinfo || [])[0];
-    if (!ii) return Response.json({ error: 'Rasm ma\'lumoti yo\'q' }, { status: 404 });
+    if (!ii) return Response.json({ error: 'Zu diesem Bild liegen keine Daten vor.' }, { status: 404 });
 
     const m = ii.extmetadata || {};
     const license = stripHtml(m.LicenseShortName && m.LicenseShortName.value);
     if (!OK_LICENSE.test(license)) {
-      return Response.json({ error: 'Litsenziya mos emas: ' + license }, { status: 403 });
+      return Response.json({ error: 'Die Lizenz dieses Bildes ist nicht zulässig: ' + license }, { status: 403 });
     }
 
     return Response.json({
@@ -74,6 +79,6 @@ export async function GET(req) {
       source: ii.descriptionurl
     });
   } catch (e) {
-    return Response.json({ error: 'So\'rov bajarilmadi: ' + e.message }, { status: 500 });
+    return Response.json({ error: 'Die Anfrage ist fehlgeschlagen: ' + e.message }, { status: 500 });
   }
 }

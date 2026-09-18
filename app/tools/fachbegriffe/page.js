@@ -1,4 +1,5 @@
 'use client';
+import { apiRawPost, apiRawGet } from '@/lib/api';
 import { useEffect, useState } from 'react';
 import ToolShell from '../ToolShell';
 
@@ -14,7 +15,7 @@ export default function Fachbegriffe() {
   const [known, setKnown] = useState(0);
 
   useEffect(() => {
-    fetch('/api/vokabel').then(r => r.json()).then(d => setTopics(d.topics || [])).catch(() => {});
+    apiRawGet('/api/vokabel').then(r => r.json()).then(d => setTopics(d.topics || [])).catch(() => {});
     load('');
     // eslint-disable-next-line
   }, []);
@@ -22,10 +23,7 @@ export default function Fachbegriffe() {
   async function load(t){
     setLoading(true); setError(''); setCards([]); setI(0); setFlipped(false); setKnown(0);
     try {
-      const res = await fetch('/api/vokabel', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic: t || undefined, count: 12 })
-      });
+      const res = await apiRawPost('/api/vokabel', { topic: t || undefined, count: 12 });
       const d = await res.json();
       if (!res.ok) throw new Error(d.error || 'Karten konnten nicht geladen werden');
       setCards(d.cards); setTopic(d.topic || t);

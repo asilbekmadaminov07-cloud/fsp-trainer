@@ -1,4 +1,5 @@
 'use client';
+import { apiRawPost, apiRawGet } from '@/lib/api';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 
@@ -25,17 +26,13 @@ export default function Quiz({ currentCase, transcript, onPassed, onClose, userI
     setLoading(true);
     setError('');
     setQuestions(null);
-    fetch('/api/quiz', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+    apiRawPost('/api/quiz', {
         caseName: currentCase.name,
         meta: currentCase.meta,
         diagnosis: currentCase.diagnosis,
         difficulty: currentCase.difficulty,
         transcript
       })
-    })
       .then(async r => {
         const d = await r.json().catch(() => ({}));
         if (!r.ok) throw new Error(d.error || 'Fragen konnten nicht geladen werden');

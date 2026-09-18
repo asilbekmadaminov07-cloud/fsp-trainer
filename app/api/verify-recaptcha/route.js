@@ -10,10 +10,10 @@ export async function POST(req) {
 
   let payload;
   try { payload = await req.json(); }
-  catch (e) { return Response.json({ error: 'Noto\'g\'ri so\'rov' }, { status: 400 }); }
+  catch (e) { return Response.json({ error: 'Ungültige Anfrage.' }, { status: 400 }); }
 
   const token = payload?.token;
-  if (!token) return Response.json({ success: false, error: 'Token yo\'q' }, { status: 400 });
+  if (!token) return Response.json({ success: false, error: 'Es wurde kein Token übergeben.' }, { status: 400 });
 
   try {
     const res = await fetch('https://www.google.com/recaptcha/api/siteverify', {

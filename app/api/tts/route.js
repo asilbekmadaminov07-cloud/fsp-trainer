@@ -1,7 +1,12 @@
+import { guard } from '@/lib/apiGuard';
+
 export async function POST(req) {
+  const gate = await guard(req, 'tts');
+  if (gate.error) return Response.json({ error: gate.error }, { status: gate.status });
+
   const apiKey = process.env.ELEVENLABS_API_KEY;
   if (!apiKey) {
-    return new Response(JSON.stringify({ error: 'ELEVENLABS_API_KEY sozlanmagan (.env.local faylini tekshiring).' }), {
+    return new Response(JSON.stringify({ error: 'Der Sprachdienst ist nicht konfiguriert.' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });
@@ -9,7 +14,7 @@ export async function POST(req) {
 
   const { text, voiceId } = await req.json();
   if (!text || !text.trim()) {
-    return new Response(JSON.stringify({ error: 'text kerak' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify({ error: 'Es wurde kein Text übergeben.' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
   }
 
   const vid = voiceId || '21m00Tcm4TlvDq8ikWAM'; // Rachel — ko'p tilli, nemis tilida yaxshi ishlaydi
@@ -40,7 +45,7 @@ export async function POST(req) {
     const audioBuffer = await elRes.arrayBuffer();
     return new Response(audioBuffer, { headers: { 'Content-Type': 'audio/mpeg' } });
   } catch (e) {
-    return new Response(JSON.stringify({ error: 'So\'rov bajarilmadi: ' + e.message }), {
+    return new Response(JSON.stringify({ error: 'Die Anfrage ist fehlgeschlagen: ' + e.message }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });

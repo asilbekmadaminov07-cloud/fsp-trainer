@@ -1,4 +1,5 @@
 'use client';
+import { apiRawPost, apiRawGet } from '@/lib/api';
 import { useEffect, useRef, useState } from 'react';
 import { CASES } from '@/lib/cases';
 import ToolShell from '../ToolShell';
@@ -49,10 +50,7 @@ export default function Kollege() {
     setHistory(next);
     setSending(true);
     try {
-      const res = await fetch('/api/chat', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ system: systemFor(c), messages: next, maxTokens: 300 })
-      });
+      const res = await apiRawPost('/api/chat', { system: systemFor(c), messages: next, maxTokens: 300 });
       const d = await res.json();
       if (!res.ok) throw new Error(d.error || 'Fehler');
       setHistory(h => [...h, { role: 'assistant', content: d.text || '…' }]);

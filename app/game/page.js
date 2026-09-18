@@ -1,4 +1,5 @@
 'use client';
+import { apiRawPost, apiRawGet } from '@/lib/api';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
@@ -23,7 +24,7 @@ function CaseImage({ imageKey, commonsFile }) {
     let alive = true;
     setInfo(null);
     setFailed(false);
-    fetch('/api/case-image?file=' + encodeURIComponent(commonsFile))
+    apiRawGet('/api/case-image?file=' + encodeURIComponent(commonsFile))
       .then(r => r.ok ? r.json() : Promise.reject(new Error('nicht verfügbar')))
       .then(d => { if (alive) setInfo(d); })
       .catch(() => { if (alive) setFailed(true); });
@@ -263,13 +264,9 @@ export default function Game() {
     setAiLoading(true);
     setAiError('');
     try {
-      const res = await fetch('/api/case', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const res = await apiRawPost('/api/case', {
           difficulty: currentDiff,
           exclude: CASES.filter(c => c.difficulty === currentDiff).map(c => c.name)
-        })
       });
       const d = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(d.error || 'Fall konnte nicht erstellt werden');
@@ -282,13 +279,9 @@ export default function Game() {
   }
 
   async function callGemini(messages, system, maxTokens){
-    const res = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ system, messages, maxTokens: maxTokens || 300 })
-    });
+    const res = await apiRawPost('/api/chat', { system, messages, maxTokens: maxTokens || 300 });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Server xatosi');
+    if (!res.ok) throw new Error(data.error || 'Der Server antwortet nicht.');
     return data.text || '';
   }
 

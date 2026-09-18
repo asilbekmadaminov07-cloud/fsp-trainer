@@ -1,4 +1,5 @@
 'use client';
+import { apiRawPost } from '@/lib/api';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import ToolShell from '../ToolShell';
@@ -30,7 +31,7 @@ export default function TestMode(){
   function load(){
     setLoading(true); setError(''); setQuestions(null);
     setIdx(0); setSelected(null); setRevealed(false); setWrong([]); setDone(false); setSaved(false);
-    fetch('/api/test-quiz', { method: 'POST' })
+    apiRawPost('/api/test-quiz')
       .then(async r => {
         const d = await r.json().catch(() => ({}));
         if (!r.ok) throw new Error(d.error || 'Fragen konnten nicht geladen werden');

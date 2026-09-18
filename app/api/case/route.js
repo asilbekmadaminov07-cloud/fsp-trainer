@@ -8,6 +8,9 @@
 // POST { difficulty, exclude?: [ismlar] }
 // → { case: {...}, generated: true }
 
+import { callGemini, geminiMessage } from '@/lib/gemini';
+import { guard } from '@/lib/apiGuard';
+
 import { verifiedFindings } from '@/lib/findings';
 
 export const maxDuration = 60;
@@ -72,8 +75,11 @@ const SCHEMA = {
 function pick(arr){ return arr[Math.floor(Math.random() * arr.length)]; }
 
 export async function POST(req) {
+  const gate = await guard(req, 'case');
+  if (gate.error) return Response.json({ error: gate.error }, { status: gate.status });
+
   const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return Response.json({ error: 'GEMINI_API_KEY sozlanmagan.' }, { status: 500 });
+  if (!apiKey) return Response.json({ error: 'Der KI-Dienst ist nicht konfiguriert.' }, { status: 500 });
 
   let body = {};
   try { body = await req.json(); } catch (e) {}
@@ -99,22 +105,15 @@ export async function POST(req) {
   };
 
   try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }
-    );
-    const data = await res.json();
-    if (!res.ok) {
-      return Response.json({ error: data.error?.message || 'Gemini API xatosi' }, { status: res.status });
-    }
+    const { data: data } = await callGemini(payload, apiKey);
     const text = data.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || '';
     let c;
     try { c = JSON.parse(text); }
-    catch (e) { return Response.json({ error: 'Javobni o\'qib bo\'lmadi' }, { status: 502 }); }
+    catch (e) { return Response.json({ error: 'Die Antwort konnte nicht gelesen werden. Bitte erneut versuchen.' }, { status: 502 }); }
 
     for (const k of ['name', 'diagnosis', 'opener', 'system']) {
       if (!c[k] || typeof c[k] !== 'string' || !c[k].trim()) {
-        return Response.json({ error: 'Holat to\'liq yaratilmadi (' + k + ')' }, { status: 502 });
+        return Response.json({ error: 'Der Fall konnte nicht vollständig erstellt werden (' + k + ')' }, { status: 502 });
       }
     }
 
@@ -138,6 +137,6 @@ export async function POST(req) {
 
     return Response.json({ case: built, finding: { key: finding.key, label: finding.label } });
   } catch (err) {
-    return Response.json({ error: 'So\'rov bajarilmadi: ' + err.message }, { status: 500 });
+    return Response.json({ error: geminiMessage(err) }, { status: err.status || 502 });
   }
 }

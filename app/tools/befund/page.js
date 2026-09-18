@@ -1,4 +1,5 @@
 'use client';
+import { apiRawPost, apiRawGet } from '@/lib/api';
 import { useEffect, useState } from 'react';
 import { verifiedFindings } from '@/lib/findings';
 import ToolShell, { Feedback } from '../ToolShell';
@@ -20,7 +21,7 @@ export default function BefundTrainer() {
     if (!pool.length) return;
     const f = pool[Math.floor(Math.random() * pool.length)];
     setCur(f); setText(''); setResult(null); setError(''); setImg(null);
-    fetch('/api/case-image?file=' + encodeURIComponent(f.file))
+    apiRawGet('/api/case-image?file=' + encodeURIComponent(f.file))
       .then(r => r.ok ? r.json() : Promise.reject(new Error('Bild nicht verfügbar')))
       .then(setImg)
       .catch(() => setImg({ error: true }));
@@ -30,10 +31,7 @@ export default function BefundTrainer() {
     if (!cur) return;
     setLoading(true); setError(''); setResult(null);
     try {
-      const res = await fetch('/api/grade', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ task: 'befund', text, context: cur.befund })
-      });
+      const res = await apiRawPost('/api/grade', { task: 'befund', text, context: cur.befund });
       const d = await res.json();
       if (!res.ok) throw new Error(d.error || 'Bewertung fehlgeschlagen');
       setResult(d);
