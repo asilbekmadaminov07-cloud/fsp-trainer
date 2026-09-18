@@ -1,4 +1,5 @@
 'use client';
+import { apiRawPost, apiRawGet } from '@/lib/api';
 import { useEffect, useRef, useState } from 'react';
 import Script from 'next/script';
 import { supabase } from '@/lib/supabaseClient';
@@ -44,10 +45,7 @@ export default function Register() {
 
       setLoading(true);
       try {
-        const vr = await fetch('/api/verify-recaptcha', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token })
-        });
+        const vr = await apiRawPost('/api/verify-recaptcha', { token });
         const vd = await vr.json();
         if (!vd.success) {
           setLoading(false);

@@ -1,7 +1,7 @@
 'use client';
+import { apiRawPost, apiRawGet } from '@/lib/api';
 import { useEffect, useState } from 'react';
 import { verifiedFindings } from '@/lib/findings';
-import { apiPost, apiGet } from '@/lib/api';
 import ToolShell, { Feedback } from '../ToolShell';
 
 // Rentgen o'qish mashqi: rasm ko'rsatiladi, foydalanuvchi nemis tilida Befund
@@ -21,7 +21,8 @@ export default function BefundTrainer() {
     if (!pool.length) return;
     const f = pool[Math.floor(Math.random() * pool.length)];
     setCur(f); setText(''); setResult(null); setError(''); setImg(null);
-    apiGet('/api/case-image?file=' + encodeURIComponent(f.file))
+    apiRawGet('/api/case-image?file=' + encodeURIComponent(f.file))
+      .then(r => r.ok ? r.json() : Promise.reject(new Error('Bild nicht verfügbar')))
       .then(setImg)
       .catch(() => setImg({ error: true }));
   }
@@ -30,7 +31,10 @@ export default function BefundTrainer() {
     if (!cur) return;
     setLoading(true); setError(''); setResult(null);
     try {
-      setResult(await apiPost('/api/grade', { task: 'befund', text, context: cur.befund }));
+      const res = await apiRawPost('/api/grade', { task: 'befund', text, context: cur.befund });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || 'Bewertung fehlgeschlagen');
+      setResult(d);
     } catch (e) { setError(e.message); }
     setLoading(false);
   }

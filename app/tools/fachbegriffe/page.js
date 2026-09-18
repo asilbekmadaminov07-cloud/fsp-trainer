@@ -1,7 +1,7 @@
 'use client';
+import { apiRawPost, apiRawGet } from '@/lib/api';
 import { useEffect, useState } from 'react';
 import ToolShell from '../ToolShell';
-import { apiPost, apiGet } from '@/lib/api';
 
 // Fachbegriff ↔ Laiensprache. 3D aylanadigan kartalar.
 export default function Fachbegriffe() {
@@ -15,7 +15,7 @@ export default function Fachbegriffe() {
   const [known, setKnown] = useState(0);
 
   useEffect(() => {
-    apiGet('/api/vokabel').then(d => setTopics(d.topics || [])).catch(() => {});
+    apiRawGet('/api/vokabel').then(r => r.json()).then(d => setTopics(d.topics || [])).catch(() => {});
     load('');
     // eslint-disable-next-line
   }, []);
@@ -23,7 +23,9 @@ export default function Fachbegriffe() {
   async function load(t){
     setLoading(true); setError(''); setCards([]); setI(0); setFlipped(false); setKnown(0);
     try {
-      const d = await apiPost('/api/vokabel', { topic: t || undefined, count: 12 });
+      const res = await apiRawPost('/api/vokabel', { topic: t || undefined, count: 12 });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || 'Karten konnten nicht geladen werden');
       setCards(d.cards); setTopic(d.topic || t);
     } catch (e) { setError(e.message); }
     setLoading(false);

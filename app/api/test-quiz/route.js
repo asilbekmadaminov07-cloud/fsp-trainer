@@ -2,6 +2,8 @@
 // tekshiruvchi 10 ta savol. Har so'rovda mavzular tasodifiy tanlanadi —
 // shu bilan har safar boshqacha test chiqadi.
 
+import { guard } from '@/lib/apiGuard';
+
 export const maxDuration = 60;
 
 const ALL_TOPICS = [
@@ -80,6 +82,9 @@ function pickTopics(){
 }
 
 export async function POST(req) {
+  const gate = await guard(req, 'test-quiz');
+  if (gate.error) return Response.json({ error: gate.error }, { status: gate.status });
+
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     return Response.json({ error: 'GEMINI_API_KEY sozlanmagan.' }, { status: 500 });
