@@ -49,7 +49,7 @@ export default function TestMode(){
     setRevealed(true);
     if (selected !== q.correct) {
       setWrong(w => [...w, {
-        nr: idx + 1, q: q.q, chosen: q.options[selected], correct: q.options[q.correct], explanation: q.explanation
+        nr: idx + 1, q: q.q, chosen: q.options[selected], correct: q.options[q.correct], explanation: q.explanation, topic: q.topic
       }]);
     }
   }
@@ -152,6 +152,13 @@ export default function TestMode(){
                     <div className="qm-line bad">Ihre Antwort: {w.chosen}</div>
                     <div className="qm-line good">Richtig wäre: {w.correct}</div>
                     <div className="qm-exp">{w.explanation}</div>
+                    <a
+                      className="quiz-btn ghost"
+                      style={{ marginTop: 10, display: 'inline-flex' }}
+                      href={'/lernen?' + new URLSearchParams({ thema: w.topic || 'Testmodus', frage: w.q, falsch: w.chosen, richtig: w.correct }).toString()}
+                    >
+                      Thema vertiefen →
+                    </a>
                   </div>
                 ))}
               </div>

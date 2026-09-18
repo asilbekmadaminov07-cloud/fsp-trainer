@@ -86,10 +86,18 @@ export default function MistakesPage(){
               <div className="qm-line bad">Ihre Antwort: {m.chosen}</div>
               <div className="qm-line good">Richtig wäre: {m.correct}</div>
               {m.explanation && <div className="qm-exp">{m.explanation}</div>}
-              <div style={{ marginTop: 10 }}>
+              <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <button className="quiz-btn ghost" onClick={() => markReviewed(m.id, !m.reviewed)}>
                   {m.reviewed ? '↺ Als offen markieren' : '✓ Als gelernt markieren'}
                 </button>
+                <a
+                  className="quiz-btn ghost"
+                  href={'/lernen?' + new URLSearchParams({
+                    thema: m.case_name || m.difficulty || '', frage: m.question, falsch: m.chosen || '', richtig: m.correct || ''
+                  }).toString()}
+                >
+                  Thema vertiefen →
+                </a>
               </div>
             </div>
           ))}

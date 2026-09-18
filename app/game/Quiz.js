@@ -88,7 +88,8 @@ export default function Quiz({ currentCase, transcript, onPassed, onClose, userI
         q: q.q,
         chosen: q.options[selected],
         correct: q.options[q.correct],
-        explanation: q.explanation
+        explanation: q.explanation,
+        topic: q.topic
       }];
       setWrong(next);
       if (next.length >= MAX_WRONG) setStatus('failed');
@@ -233,6 +234,13 @@ function MistakeList({ wrong }) {
           <div className="qm-line bad">Ihre Antwort: {w.chosen}</div>
           <div className="qm-line good">Richtig wäre: {w.correct}</div>
           <div className="qm-exp">{w.explanation}</div>
+          <a
+            className="quiz-btn ghost"
+            style={{ marginTop: 10, display: 'inline-flex' }}
+            href={'/lernen?' + new URLSearchParams({ thema: w.topic || '', frage: w.q, falsch: w.chosen, richtig: w.correct }).toString()}
+          >
+            Thema vertiefen →
+          </a>
         </div>
       ))}
     </div>
