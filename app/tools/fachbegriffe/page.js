@@ -17,7 +17,7 @@ export default function Fachbegriffe() {
   useEffect(() => {
     apiRawGet('/api/vokabel').then(r => r.json()).then(d => setTopics(d.topics || [])).catch(() => {});
     load('');
-    // eslint-disable-next-line
+
   }, []);
 
   async function load(t){

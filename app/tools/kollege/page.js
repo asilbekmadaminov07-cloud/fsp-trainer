@@ -33,7 +33,9 @@ export default function Kollege() {
   const bodyRef = useRef(null);
   const c = CASES[idx];
 
-  useEffect(() => { reset(idx); /* eslint-disable-next-line */ }, []);
+  useEffect(() => {
+    setHistory([{ role: 'assistant', content: 'Guten Morgen, Kollege. Sie wollten mir einen Fall vorstellen — bitte, ich höre.' }]);
+  }, []);
   useEffect(() => { if (bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight; }, [history]);
 
   function reset(i){

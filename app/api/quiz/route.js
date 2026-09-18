@@ -119,6 +119,13 @@ export async function POST(req) {
   if (!payload || !payload.diagnosis) {
     return Response.json({ error: 'Es wurde keine Diagnose übergeben.' }, { status: 400 });
   }
+  payload = {
+    caseName: String(payload.caseName || '').slice(0, 160),
+    meta: String(payload.meta || '').slice(0, 500),
+    diagnosis: String(payload.diagnosis || '').slice(0, 500),
+    difficulty: ['leicht', 'mittel', 'schwer', 'pro'].includes(payload.difficulty) ? payload.difficulty : 'leicht',
+    transcript: String(payload.transcript || '').slice(0, 12000)
+  };
 
   const body = {
     contents: [{ role: 'user', parts: [{ text: buildPrompt(payload) }] }],

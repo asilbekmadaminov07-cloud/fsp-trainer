@@ -1,7 +1,8 @@
 'use client';
 import { apiRawPost, apiRawGet } from '@/lib/api';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
+import { newAttemptId } from '@/lib/progress';
 
 // 20 ta savolli imtihon.
 // Qoida: 3-xato — imtihon tugaydi va boshidan boshlanadi.
@@ -20,6 +21,7 @@ export default function Quiz({ currentCase, transcript, onPassed, onClose, userI
   const [wrong, setWrong] = useState([]);
   const [status, setStatus] = useState('running'); // running | passed | failed
   const [awarded, setAwarded] = useState(null);
+  const attemptIdRef = useRef(newAttemptId());
 
   useEffect(() => {
     let alive = true;
@@ -62,12 +64,14 @@ export default function Quiz({ currentCase, transcript, onPassed, onClose, userI
       question: w.q,
       chosen: w.chosen,
       correct: w.correct,
-      explanation: w.explanation
+      explanation: w.explanation,
+      topic: w.topic || null
     }))).then(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status]);
 
   function restart(){
+    attemptIdRef.current = newAttemptId();
     setIdx(0); setSelected(null); setRevealed(false);
     setWrong([]); setStatus('running'); setAwarded(null);
     setAttempt(a => a + 1);   // yangi savollar yaratiladi
@@ -100,7 +104,7 @@ export default function Quiz({ currentCase, transcript, onPassed, onClose, userI
     if (status === 'failed') return;
     if (idx + 1 >= questions.length) {
       setStatus('passed');
-      const r = await onPassed(questions.length - wrong.length, questions.length);
+      const r = await onPassed(questions.length - wrong.length, questions.length, attemptIdRef.current);
       setAwarded(r || null);
       return;
     }

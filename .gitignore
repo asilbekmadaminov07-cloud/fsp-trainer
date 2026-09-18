@@ -23,6 +23,7 @@ yarn-error.log*
 
 # Claude Code mahalliy preview sozlamasi
 /.claude/
+/supabase/.temp/
 
 # tekshiruv uchun vaqtinchalik rasmlar
 /_preview/

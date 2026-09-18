@@ -28,9 +28,15 @@ export async function POST(req) {
   if (!audioBase64) {
     return Response.json({ error: 'Es wurde keine Audioaufnahme übergeben.' }, { status: 400 });
   }
+  if (typeof audioBase64 !== 'string' || audioBase64.length > 10_000_000) {
+    return Response.json({ error: 'Die Audioaufnahme ist zu groß.' }, { status: 413 });
+  }
 
   // "audio/webm;codecs=opus" → "audio/webm" (Gemini faqat asosiy MIME turini qabul qiladi)
   const cleanMime = String(mimeType).split(';')[0].trim();
+  if (!['audio/webm', 'audio/mp4', 'audio/mpeg', 'audio/ogg', 'audio/wav'].includes(cleanMime)) {
+    return Response.json({ error: 'Dieses Audioformat wird nicht unterstützt.' }, { status: 400 });
+  }
 
   const prompt = [
     'Transkribiere die Audioaufnahme wortwörtlich auf Deutsch.',

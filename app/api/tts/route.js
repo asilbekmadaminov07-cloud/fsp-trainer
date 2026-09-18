@@ -12,9 +12,17 @@ export async function POST(req) {
     });
   }
 
-  const { text, voiceId } = await req.json();
-  if (!text || !text.trim()) {
+  let payload;
+  try { payload = await req.json(); }
+  catch { return Response.json({ error: 'Ungültige Anfrage.' }, { status: 400 }); }
+  const text = String(payload?.text || '').trim();
+  const voiceId = String(payload?.voiceId || '');
+  if (!text) {
     return new Response(JSON.stringify({ error: 'Es wurde kein Text übergeben.' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+  }
+  if (text.length > 1200) return Response.json({ error: 'Der Text ist zu lang.' }, { status: 400 });
+  if (voiceId && !/^[A-Za-z0-9_-]{10,64}$/.test(voiceId)) {
+    return Response.json({ error: 'Ungültige Stimme.' }, { status: 400 });
   }
 
   const vid = voiceId || '21m00Tcm4TlvDq8ikWAM'; // Rachel — ko'p tilli, nemis tilida yaxshi ishlaydi
@@ -28,7 +36,7 @@ export async function POST(req) {
         'Accept': 'audio/mpeg'
       },
       body: JSON.stringify({
-        text,
+        text: text.slice(0, 1200),
         model_id: 'eleven_multilingual_v2',
         voice_settings: { stability: 0.42, similarity_boost: 0.75 }
       })

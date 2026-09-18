@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { CASES, DIFFS, DIFF_REWARDS, IMAGES, COMMON_PATIENT_INSTRUCTIONS } from '@/lib/cases';
 import { levelFromXp, careerStage } from '@/lib/career';
 import { touchPracticeDay } from '@/lib/practice';
+import { awardProgress, newAttemptId } from '@/lib/progress';
 import Header from '@/app/components/Header';
 import {
   speakNatural, stopSpeaking, pickVoice,
@@ -90,6 +91,7 @@ export default function Game() {
   const stateRef = useRef({});       // eng so'nggi state'ga callback ichidan kirish uchun
   const caseVoiceRef = useRef(pickVoice());
   const seenRef = useRef({});    // har daraja uchun allaqachon ko'rilgan holatlar
+  const diagnosisAttemptRef = useRef(newAttemptId());
 
   const casesForDiff = CASES.filter(c => c.difficulty === currentDiff);
   const currentCase = aiCase || casesForDiff[currentCaseIdx] || casesForDiff[0];
@@ -233,6 +235,7 @@ export default function Game() {
 
   // Istalgan holatni (qo'lda yozilgan yoki AI yaratgan) boshlaydi
   function beginCase(c){
+    diagnosisAttemptRef.current = newAttemptId();
     setShowQuiz(false);
     setEvalResult(null);
     setDiagInput('');
@@ -388,16 +391,10 @@ export default function Game() {
         // MUHIM: ovozli rejimda bu funksiya "eski" closure ichidan chaqiriladi,
         // shuning uchun profil va qiyinlik darajasini stateRef'dan olamiz.
         const r = DIFF_REWARDS[stateRef.current.currentDiff];
-        const newXp = (prof.xp || 0) + r.xp;
-        const newCoins = (prof.coins || 0) + r.coins;
-        const newLevel = levelFromXp(newXp);
-        const newCasesSolved = (prof.cases_solved || 0) + 1;
-        const { data: updated } = await supabase
-          .from('profiles')
-          .update({ xp: newXp, coins: newCoins, level: newLevel, cases_solved: newCasesSolved })
-          .eq('id', prof.id)
-          .select()
-          .single();
+        const updated = await awardProgress(
+          `diagnosis:${stateRef.current.currentDiff}`,
+          diagnosisAttemptRef.current
+        );
         if (updated) setProfile(updated);
         reward = r;
       }
@@ -418,7 +415,7 @@ export default function Game() {
   }
 
   // Imtihon o'tilganda: asosiy mukofot va martaba shu yerda beriladi
-  async function handleQuizPassed(score, total){
+  async function handleQuizPassed(score, total, attemptId){
     const prof = stateRef.current.profile;
     const diff = stateRef.current.currentDiff;
     if (!prof) return null;
@@ -427,20 +424,10 @@ export default function Game() {
     const xp = base.xp * mult;
     const coins = base.coins * mult;
     const oldLevel = levelFromXp(prof.xp || 0);
-    const newXp = (prof.xp || 0) + xp;
-    const newLevel = levelFromXp(newXp);
-    const { data: updated } = await supabase
-      .from('profiles')
-      .update({
-        xp: newXp,
-        coins: (prof.coins || 0) + coins,
-        level: newLevel,
-        cases_solved: (prof.cases_solved || 0) + 1
-      })
-      .eq('id', prof.id)
-      .select()
-      .single();
+    const kind = score === total ? 'perfect' : 'pass';
+    const updated = await awardProgress(`quiz:${diff}:${kind}`, attemptId);
     if (updated) setProfile(updated);
+    const newLevel = levelFromXp(updated?.xp || prof.xp || 0);
     return { xp, coins, levelUp: newLevel > oldLevel, title: careerStage(newLevel).title };
   }
 

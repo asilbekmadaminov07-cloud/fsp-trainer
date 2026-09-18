@@ -32,6 +32,9 @@ export async function GET(req) {
   const { searchParams } = new URL(req.url);
   let file = searchParams.get('file');
   if (!file) return Response.json({ error: 'Es wurde keine Bilddatei angegeben.' }, { status: 400 });
+  if (file.length > 240 || /[\r\n\0]/.test(file)) {
+    return Response.json({ error: 'Ungültiger Dateiname.' }, { status: 400 });
+  }
   if (!/^File:/i.test(file)) file = 'File:' + file;
 
   // Kichikroq nusxa — mobil uchun yetarli, tez yuklanadi

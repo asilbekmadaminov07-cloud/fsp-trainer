@@ -3,6 +3,7 @@ import { apiRawPost } from '@/lib/api';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import ToolShell from '../ToolShell';
+import { awardProgress, newAttemptId } from '@/lib/progress';
 
 const REWARD_PER_CORRECT = { xp: 8, coins: 4 };
 
@@ -19,18 +20,20 @@ export default function TestMode(){
   const [wrong, setWrong] = useState([]);
   const [done, setDone] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [attemptId, setAttemptId] = useState(() => newAttemptId());
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) setUserId(data.session.user.id);
     });
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, []);
 
   function load(){
     setLoading(true); setError(''); setQuestions(null);
     setIdx(0); setSelected(null); setRevealed(false); setWrong([]); setDone(false); setSaved(false);
+    setAttemptId(newAttemptId());
     apiRawPost('/api/test-quiz')
       .then(async r => {
         const d = await r.json().catch(() => ({}));
@@ -59,13 +62,7 @@ export default function TestMode(){
       setDone(true);
       const correctCount = questions.length - wrong.length;
       if (userId && correctCount > 0) {
-        const { data: prof } = await supabase.from('profiles').select('xp, coins').eq('id', userId).single();
-        if (prof) {
-          await supabase.from('profiles').update({
-            xp: (prof.xp || 0) + correctCount * REWARD_PER_CORRECT.xp,
-            coins: (prof.coins || 0) + correctCount * REWARD_PER_CORRECT.coins
-          }).eq('id', userId);
-        }
+        await awardProgress('test:correct', attemptId, correctCount);
       }
       return;
     }
@@ -78,7 +75,7 @@ export default function TestMode(){
     setSaved(true);
     supabase.from('mistakes').insert(wrong.map(w => ({
       user_id: userId, case_name: null, difficulty: 'test',
-      question: w.q, chosen: w.chosen, correct: w.correct, explanation: w.explanation
+      question: w.q, chosen: w.chosen, correct: w.correct, explanation: w.explanation, topic: w.topic || null
     }))).then(() => {});
   }, [done, saved, userId, wrong]);
 

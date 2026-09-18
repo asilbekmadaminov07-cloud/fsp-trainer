@@ -1,6 +1,6 @@
 'use client';
 import { apiRawPost, apiRawGet } from '@/lib/api';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { verifiedFindings } from '@/lib/findings';
 import ToolShell, { Feedback } from '../ToolShell';
 
@@ -15,9 +15,7 @@ export default function BefundTrainer() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  useEffect(() => { next(); /* eslint-disable-next-line */ }, []);
-
-  function next(){
+  const next = useCallback(() => {
     if (!pool.length) return;
     const f = pool[Math.floor(Math.random() * pool.length)];
     setCur(f); setText(''); setResult(null); setError(''); setImg(null);
@@ -25,7 +23,9 @@ export default function BefundTrainer() {
       .then(r => r.ok ? r.json() : Promise.reject(new Error('Bild nicht verfügbar')))
       .then(setImg)
       .catch(() => setImg({ error: true }));
-  }
+  }, [pool]);
+
+  useEffect(() => { next(); }, [next]);
 
   async function grade(){
     if (!cur) return;
