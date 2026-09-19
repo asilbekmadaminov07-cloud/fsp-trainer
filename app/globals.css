@@ -606,7 +606,6 @@ h1,h2,h3{font-family:var(--serif);letter-spacing:-.015em;line-height:1.18}
   .acct-info{display:none}
   .stats{gap:7px}
   .stat{padding:5px 9px;font-size:12px}
-  .tool-grid{grid-template-columns:1fr}
   .two-col{gap:12px}
   .acct-dropdown{right:-10px;min-width:210px}
   .diag-row{flex-direction:column}
@@ -622,7 +621,6 @@ h1,h2,h3{font-family:var(--serif);letter-spacing:-.015em;line-height:1.18}
   .stat{padding:5px 10px}
   .game-shell,.tool-shell{padding:18px 14px 56px}
   .hero-card{padding:22px 18px}
-  .tool-grid{grid-template-columns:1fr;gap:12px}
   .tool-card{padding:18px 16px}
   .tool-card:hover{transform:none}
   .cf-head,.voice-bar,.voice-hint,.cf-input,.image-row,.diag-block{padding-left:15px;padding-right:15px}
