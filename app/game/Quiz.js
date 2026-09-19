@@ -6,6 +6,7 @@ import { newAttemptId } from '@/lib/progress';
 import { playCorrect, playWrong, playLevelUp } from '@/lib/sound';
 import { burstConfetti } from '@/lib/confetti';
 import { friendlyError } from '@/lib/errors';
+import TiltCard from '@/app/components/TiltCard';
 
 // 20 ta savolli imtihon. Barcha 20 ta savol oxirigacha davom etadi — erta
 // to'xtamaydi. Oxirida umumiy ball va natija (o'tdi/o'tmadi) ko'rsatiladi.
@@ -162,7 +163,7 @@ export default function Quiz({ currentCase, transcript, onPassed, onClose, onAdv
     const score = correctCount;
     return (
       <div className="quiz-box">
-        <div className="quiz-verdict failed">Nicht bestanden — {score} von {questions.length}</div>
+        <TiltCard className="quiz-verdict failed" maxDeg={5}>Nicht bestanden — {score} von {questions.length}</TiltCard>
         <p className="quiz-note">
           Für den Aufstieg sind mindestens {PASS_THRESHOLD} von {questions.length} richtigen Antworten nötig.
           Lesen Sie zuerst, was schiefgelaufen ist:
@@ -180,7 +181,7 @@ export default function Quiz({ currentCase, transcript, onPassed, onClose, onAdv
     const score = correctCount;
     return (
       <div className="quiz-box">
-        <div className="quiz-verdict passed">Bestanden — {score} von {questions.length}</div>
+        <TiltCard className="quiz-verdict passed" maxDeg={5}>Bestanden — {score} von {questions.length}</TiltCard>
         {awarded && (
           <div className="reward-toast">
             +{awarded.coins} zum Praxiskonto · +{awarded.xp} Erfahrung

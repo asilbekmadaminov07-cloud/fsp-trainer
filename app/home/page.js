@@ -6,6 +6,7 @@ import { levelFromXp, careerStage } from '@/lib/career';
 import { touchPracticeDay, daysSince } from '@/lib/practice';
 import Header from '@/app/components/Header';
 import TiltCard from '@/app/components/TiltCard';
+import Onboarding from '@/app/components/Onboarding';
 import ReferralCard from '@/app/components/ReferralCard';
 import PushOptIn from '@/app/components/PushOptIn';
 import { HomeSkeleton } from '@/app/components/Skeleton';
@@ -125,6 +126,7 @@ export default function Home() {
   return (
     <>
       <Header profile={profile} />
+      <Onboarding />
 
       <div className="game-shell">
         <PushOptIn userId={profile.id} />
@@ -142,9 +144,9 @@ export default function Home() {
         </TiltCard>
 
         <div className="dashboard-quick">
-          <a href="/daily"><span>⚡</span><div><b>Heutiges 10-Minuten-Training</b><small>Challenge starten und Serie halten</small></div><em>Start →</em></a>
-          <a href="/coach"><span>🧠</span><div><b>Ihr persönlicher Lernplan</b><small>AI-Coach analysiert Ihre Fehler</small></div><em>Öffnen →</em></a>
-          <a href="/partner"><span>🤝</span><div><b>Partner-Übung</b><small>Live mit einem anderen Kandidaten üben</small></div><em>Öffnen →</em></a>
+          <TiltCard as="a" href="/daily"><span>⚡</span><div><b>Heutiges 10-Minuten-Training</b><small>Challenge starten und Serie halten</small></div><em>Start →</em></TiltCard>
+          <TiltCard as="a" href="/coach"><span>🧠</span><div><b>Ihr persönlicher Lernplan</b><small>AI-Coach analysiert Ihre Fehler</small></div><em>Öffnen →</em></TiltCard>
+          <TiltCard as="a" href="/partner"><span>🤝</span><div><b>Partner-Übung</b><small>Live mit einem anderen Kandidaten üben</small></div><em>Öffnen →</em></TiltCard>
         </div>
 
         <div className="section-heading-row">

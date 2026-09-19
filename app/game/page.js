@@ -10,6 +10,8 @@ import { awardProgress, newAttemptId } from '@/lib/progress';
 import { playCorrect, playWrong } from '@/lib/sound';
 import { burstConfetti } from '@/lib/confetti';
 import Header from '@/app/components/Header';
+import TiltCard from '@/app/components/TiltCard';
+import ToothChart from '@/app/components/ToothChart';
 import { ToolSkeleton } from '@/app/components/Skeleton';
 import {
   speakNatural, stopSpeaking, pickVoice,
@@ -37,7 +39,7 @@ function CaseImage({ imageKey, commonsFile }) {
 
   if (failed || (!info && !commonsFile)) {
     return (
-      <div className="img-frame" dangerouslySetInnerHTML={{ __html: IMAGES[imageKey] || '' }} />
+      <TiltCard className="img-frame" maxDeg={8} dangerouslySetInnerHTML={{ __html: IMAGES[imageKey] || '' }} />
     );
   }
   if (!info) {
@@ -45,9 +47,9 @@ function CaseImage({ imageKey, commonsFile }) {
   }
   return (
     <>
-      <div className="img-frame">
+      <TiltCard className="img-frame" maxDeg={8}>
         <img src={info.url} alt="Befundbild" onError={() => setFailed(true)} />
-      </div>
+      </TiltCard>
       <div className="img-credit">
         {info.artist ? info.artist + ' · ' : ''}{info.license}
         {info.full && <> · <a href={info.full} target="_blank" rel="noreferrer">Röntgen vergrößern</a></>}
@@ -69,6 +71,8 @@ export default function Game() {
   const [sending, setSending] = useState(false);
   const [diagInput, setDiagInput] = useState('');
   const [diagError, setDiagError] = useState(false);
+  const [showTeeth, setShowTeeth] = useState(false);
+  const [selectedTooth, setSelectedTooth] = useState(null);
   const [evalResult, setEvalResult] = useState(null);
   const [evalLoading, setEvalLoading] = useState(false);
 
@@ -245,6 +249,8 @@ export default function Game() {
     setDiagInput('');
     setDiagError(false);
     setAiError('');
+    setShowTeeth(false);
+    setSelectedTooth(null);
     caseVoiceRef.current = pickVoice();
     stopSpeaking();
     if (!c) return;
@@ -464,6 +470,16 @@ export default function Game() {
     runEval(diagInput.trim());
   }
 
+  // Tish sxemasidan tanlangan raqamni diagnoz matniga "Zahn NN" sifatida qo'shadi
+  // (oldingi tanlovni almashtiradi, qolgan matnni saqlab qoladi).
+  function selectTooth(n){
+    setSelectedTooth(n);
+    setDiagInput(prev => {
+      const cleaned = prev.replace(/,?\s*Zahn\s*\d+/i, '').trim();
+      return (cleaned ? cleaned + ', ' : '') + 'Zahn ' + n;
+    });
+  }
+
   function toggleVoiceMode(){
     if (voiceActive) {
       activeRef.current = false;
@@ -521,7 +537,7 @@ export default function Game() {
           <div className="casefile">
             <div className="cf-head">
               <div className="cf-patient">
-                <div className="cf-avatar">{currentCase.avatar}</div>
+                <TiltCard className="cf-avatar" maxDeg={14}>{currentCase.avatar}</TiltCard>
                 <div>
                   <div className="cf-name">{currentCase.name}</div>
                   <div className="cf-meta">
@@ -631,6 +647,12 @@ export default function Game() {
                 <button onClick={getEval} disabled={evalLoading}>Auswertung anzeigen</button>
               </div>
               {diagError && <p className="error-text">Bitte tragen Sie zuerst Ihre Diagnose ein.</p>}
+              <button type="button" className="tooth-toggle" onClick={() => setShowTeeth(v => !v)}>
+                {showTeeth ? 'Zahnschema ausblenden' : '🦷 Zahnschema öffnen — Zahn auswählen'}
+              </button>
+              {showTeeth && (
+                <ToothChart selected={selectedTooth} onSelect={selectTooth} />
+              )}
             </div>
 
             {(evalLoading || evalResult) && (

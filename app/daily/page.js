@@ -6,6 +6,7 @@ import { apiPost } from '@/lib/api';
 import { primaryFocus } from '@/lib/learning';
 import { supabase } from '@/lib/supabaseClient';
 import ShareButton from '@/app/components/ShareButton';
+import TiltCard from '@/app/components/TiltCard';
 import { playCorrect, playWrong, playLevelUp } from '@/lib/sound';
 import { burstConfetti } from '@/lib/confetti';
 import { friendlyError } from '@/lib/errors';
@@ -80,9 +81,9 @@ function DailyTraining() {
   return (
     <ToolShell title="10-Minuten-Training" lead="Eine kurze persönliche Challenge pro Tag. Wissen festigen, Serie halten und in der Liga aufsteigen.">
       <div className="daily-strip">
-        <div><span>🔥</span><b>{completedToday ? 'Heute geschafft' : 'Heute offen'}</b><small>Tages-Challenge</small></div>
-        <div><span>🎯</span><b>{focus || 'Wird ermittelt'}</b><small>Ihr Schwerpunkt</small></div>
-        <div><span>⏱</span><b>10 Minuten</b><small>Kurze Lerneinheit</small></div>
+        <TiltCard maxDeg={8}><span>🔥</span><b>{completedToday ? 'Heute geschafft' : 'Heute offen'}</b><small>Tages-Challenge</small></TiltCard>
+        <TiltCard maxDeg={8}><span>🎯</span><b>{focus || 'Wird ermittelt'}</b><small>Ihr Schwerpunkt</small></TiltCard>
+        <TiltCard maxDeg={8}><span>⏱</span><b>10 Minuten</b><small>Kurze Lerneinheit</small></TiltCard>
       </div>
 
       {loading && <div className="coach-loading">Die heutige persönliche Challenge wird erstellt…</div>}
@@ -108,7 +109,7 @@ function DailyTraining() {
       })()}
 
       {done && <section className="daily-result">
-        <div className="result-ring"><b>{score}/5</b><span>richtig</span></div>
+        <TiltCard className="result-ring" maxDeg={10}><b>{score}/5</b><span>richtig</span></TiltCard>
         <div><span className="eyebrow">TAGESZIEL ERREICHT</span><h2>Stark trainiert!</h2><p>{elapsedMinutes} Minuten · {focus}</p>
           {result?.points > 0 && <div className="reward-toast">+{result.points} Ligapunkte</div>}
           {!result?.first_completion_today && completedToday && <p className="coach-note">Die heutige Belohnung wurde bereits gutgeschrieben.</p>}

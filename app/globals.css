@@ -624,6 +624,40 @@ h1,h2,h3{font-family:var(--serif);letter-spacing:-.015em;line-height:1.18}
 @keyframes float3d{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-6px) rotate(.6deg)}}
 @media(prefers-reduced-motion:reduce){.float-3d{animation:none}}
 
+/* ---------- tish sxemasi (FDI) ---------- */
+.tooth-toggle{margin-top:12px;background:none;border:1px dashed var(--line);border-radius:var(--r-sm);padding:9px 14px;font-size:12.5px;font-weight:600;color:var(--brand);cursor:pointer;transition:.18s var(--ease)}
+.tooth-toggle:hover{border-color:var(--brand);background:var(--brand-tint)}
+.tooth-chart{margin-top:12px;padding:16px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface-2);display:flex;flex-direction:column;gap:6px}
+.tooth-row{display:flex;gap:4px;justify-content:center;flex-wrap:wrap}
+.tooth-mid{height:1px;background:var(--line);margin:4px 20%}
+.tooth-btn{
+  width:30px;height:34px;border:1px solid var(--line);background:var(--surface);
+  border-radius:8px 8px 4px 4px;font-size:10.5px;font-weight:650;color:var(--muted);
+  cursor:pointer;transition:.15s var(--ease);
+}
+.tooth-btn:hover{border-color:var(--brand);color:var(--brand);transform:translateY(-2px);box-shadow:var(--sh-2)}
+.tooth-btn.active{background:linear-gradient(180deg,var(--brand-2),var(--brand));border-color:var(--brand-dark);color:#fff;box-shadow:var(--sh-brand)}
+@media(max-width:480px){.tooth-btn{width:24px;height:28px;font-size:9px}}
+
+/* ---------- onboarding ---------- */
+.onboarding-overlay{
+  position:fixed;inset:0;z-index:200;background:rgba(15,23,32,.55);backdrop-filter:blur(3px);
+  display:flex;align-items:center;justify-content:center;padding:20px;animation:msgIn .25s var(--ease) both;
+}
+.onboarding-card{
+  position:relative;max-width:380px;width:100%;background:linear-gradient(180deg,var(--surface),var(--surface-2));
+  border:1px solid var(--line);border-radius:var(--r-xl);box-shadow:var(--sh-4),var(--edge);
+  padding:34px 26px 26px;text-align:center;
+}
+.onboarding-skip{position:absolute;top:14px;right:16px;background:none;border:none;font-size:12px;color:var(--muted);cursor:pointer}
+.onboarding-icon{font-size:40px;margin-bottom:14px}
+.onboarding-card h2{font-size:19px;margin-bottom:8px}
+.onboarding-card p{font-size:13.5px;line-height:1.55;color:var(--muted);margin-bottom:20px}
+.onboarding-dots{display:flex;justify-content:center;gap:6px;margin-bottom:20px}
+.onboarding-dots span{width:6px;height:6px;border-radius:99px;background:var(--line)}
+.onboarding-dots span.active{background:var(--brand);width:16px}
+.onboarding-card .quiz-btn{width:100%}
+
 /* ---------- ultra-pro: sensor 3D, shisha, animatsion fon ---------- */
 .tilt3d-el{ transition: box-shadow .3s var(--ease), border-color .3s var(--ease); }
 
