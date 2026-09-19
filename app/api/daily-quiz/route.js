@@ -41,7 +41,7 @@ export async function POST(req) {
     contents: [{ role: 'user', parts: [{ text: `Erstelle die heutige Challenge zum Schwerpunkt: ${focus}` }] }],
     systemInstruction: { parts: [{ text: `Du bist FSP-Prüfer für Zahnmedizin. Erstelle genau 5 abwechslungsreiche Multiple-Choice-Fragen für eine 10-minütige Tagesübung. Jede Frage hat genau vier unterschiedliche Antworten und nur eine eindeutige richtige Antwort. Die Erklärung soll den Denkweg in höchstens zwei Sätzen zeigen. Alles auf Deutsch.` }] },
     generationConfig: {
-      maxOutputTokens: 2400,
+      maxOutputTokens: 4000,
       temperature: 0.9,
       responseMimeType: 'application/json',
       responseSchema: SCHEMA

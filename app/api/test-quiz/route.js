@@ -109,7 +109,7 @@ export async function POST(req) {
     contents: [{ role: 'user', parts: [{ text: 'Erstelle jetzt die 10 Testfragen.' }] }],
     systemInstruction: { parts: [{ text: buildSystem(topics) }] },
     generationConfig: {
-      maxOutputTokens: 4096,
+      maxOutputTokens: 8000,
       temperature: 1.05,
       responseMimeType: 'application/json',
       responseSchema: SCHEMA
@@ -121,7 +121,7 @@ export async function POST(req) {
     const text = data.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || '';
     let parsed;
     try { parsed = JSON.parse(text); }
-    catch (e) { return Response.json({ error: 'DEBUG len=' + text.length + ' finish=' + JSON.stringify(data.candidates?.[0]?.finishReason) + ' head=' + text.slice(0, 200) + ' tail=' + text.slice(-200) }, { status: 502 }); }
+    catch (e) { return Response.json({ error: 'Die Antwort konnte nicht gelesen werden. Bitte erneut versuchen.' }, { status: 502 }); }
 
     const questions = sanitize(parsed.questions).sort(() => Math.random() - 0.5).slice(0, 10);
     if (questions.length < 5) {

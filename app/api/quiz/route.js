@@ -150,7 +150,7 @@ export async function POST(req) {
     contents: [{ role: 'user', parts: [{ text: buildPrompt(payload) }] }],
     systemInstruction: { parts: [{ text: buildSystem() }] },
     generationConfig: {
-      maxOutputTokens: 8192,
+      maxOutputTokens: 16000,
       temperature: 1.0,          // har urinishda boshqa savollar chiqsin
       responseMimeType: 'application/json',
       responseSchema: SCHEMA

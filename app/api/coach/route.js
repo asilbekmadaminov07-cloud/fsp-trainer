@@ -62,7 +62,7 @@ export async function POST(req) {
     contents: [{ role: 'user', parts: [{ text: JSON.stringify(mistakes) }] }],
     systemInstruction: { parts: [{ text: `Du bist ein persönlicher FSP-Lerncoach für Zahnmedizin. Analysiere die Fehlerliste und erstelle einen realistischen 7-Tage-Plan. Jeder Tag dauert genau 10 Minuten. Priorisiere wiederkehrende Denkfehler, nicht bloß einzelne Fragen. Schreibe klares Deutsch, motivierend aber konkret. Gib genau 3 Schwachpunkte und genau 7 Tage zurück. Keine erfundenen Leistungen.${stateNote}` }] },
     generationConfig: {
-      maxOutputTokens: 1800,
+      maxOutputTokens: 3000,
       temperature: 0.45,
       responseMimeType: 'application/json',
       responseSchema: SCHEMA

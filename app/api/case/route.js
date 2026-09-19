@@ -100,7 +100,7 @@ export async function POST(req) {
     contents: [{ role: 'user', parts: [{ text: buildPrompt(finding, difficulty, hint, exclude) }] }],
     systemInstruction: { parts: [{ text: buildSystem() }] },
     generationConfig: {
-      maxOutputTokens: 2048,
+      maxOutputTokens: 3500,
       temperature: 1.1,
       responseMimeType: 'application/json',
       responseSchema: SCHEMA

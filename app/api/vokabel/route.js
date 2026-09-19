@@ -70,7 +70,7 @@ Alles auf Deutsch. Kein Markdown. Keine Wiederholungen innerhalb der Liste.`;
     contents: [{ role: 'user', parts: [{ text: `Themengebiet: ${topic}\n\nErstelle ${count} Lernkarten.` }] }],
     systemInstruction: { parts: [{ text: system }] },
     generationConfig: {
-      maxOutputTokens: 4000, temperature: 1.0,
+      maxOutputTokens: 6000, temperature: 1.0,
       responseMimeType: 'application/json', responseSchema: SCHEMA
     }
   };

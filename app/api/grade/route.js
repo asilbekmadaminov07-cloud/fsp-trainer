@@ -77,7 +77,7 @@ export async function POST(req) {
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
     systemInstruction: { parts: [{ text: task.system }] },
     generationConfig: {
-      maxOutputTokens: 3000, temperature: 0.3,
+      maxOutputTokens: 4500, temperature: 0.3,
       responseMimeType: 'application/json', responseSchema: SCHEMA
     }
   };
