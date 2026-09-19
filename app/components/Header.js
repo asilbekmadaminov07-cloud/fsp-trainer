@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { daysSince } from '@/lib/practice';
 import { useCountUp } from '@/lib/useCountUp';
 import SensorToggle from '@/app/components/SensorToggle';
+import BottomNav from '@/app/components/BottomNav';
 
 // Barcha ichki sahifalar uchun umumiy tepa panel: hisob ma'lumotlari,
 // amaliyot statistikasi va chiqish tugmasi bitta joyda.
@@ -35,8 +36,10 @@ export default function Header({ profile, backHref }){
   const initials = (profile.full_name || '?').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
   const memberDays = daysSince(profile.created_at);
   const practiceDays = profile.practice_days || 0;
+  const practicedToday = profile.last_practice_date === new Date().toISOString().slice(0, 10);
 
   return (
+    <>
     <div className="topbar">
       <div className="topbar-inner">
         <a href={backHref || '/home'} className="brand-mark" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -50,7 +53,9 @@ export default function Header({ profile, backHref }){
 
           <div className="acct" ref={boxRef}>
             <button className="acct-menu-btn" onClick={() => setOpen(o => !o)} aria-label="Konto">
-              <div className="acct-avatar">{initials}</div>
+              <div className={'acct-ring' + (practicedToday ? ' ring-active' : '')}>
+                <div className="acct-avatar">{initials}</div>
+              </div>
             </button>
             <div className="acct-info">
               <span className="acct-name">{profile.full_name}</span>
@@ -75,5 +80,7 @@ export default function Header({ profile, backHref }){
         </div>
       </div>
     </div>
+    <BottomNav />
+    </>
   );
 }

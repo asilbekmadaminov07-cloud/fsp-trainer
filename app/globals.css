@@ -573,6 +573,19 @@ h1,h2,h3{font-family:var(--serif);letter-spacing:-.015em;line-height:1.18}
 
 /* ---------- header (account) ---------- */
 .acct{display:flex;align-items:center;gap:10px;position:relative}
+
+/* Instagram-uslubidagi "story ring" — bugun mashq qilingan bo'lsa yorqin, bo'lmasa xira */
+.acct-ring{
+  width:42px;height:42px;border-radius:13px;padding:2.5px;flex:0 0 auto;
+  background:var(--line-strong);
+  transition:background .3s var(--ease);
+}
+.acct-ring.ring-active{
+  background:conic-gradient(from 220deg, var(--brand), var(--gold), var(--brand-2), var(--brand));
+  box-shadow:0 0 10px color-mix(in srgb, var(--brand) 45%, transparent);
+}
+.acct-ring .acct-avatar{width:100%;height:100%;border-radius:10.5px}
+
 .acct-avatar{
   width:36px;height:36px;border-radius:11px;flex:0 0 auto;
   background:linear-gradient(145deg,var(--brand-2),var(--brand-dark));color:#fff;
@@ -781,4 +794,29 @@ h1,h2,h3{font-family:var(--serif);letter-spacing:-.015em;line-height:1.18}
 @media(max-width:360px){
   .brand-mark{font-size:13px}.stat{padding:4px 5px}.streak-badge{padding:4px 5px}.acct-avatar{width:29px;height:29px}
   .tool-grid{gap:7px}.tool-card{min-height:142px;padding:11px 9px}.tool-name{font-size:12.5px}
+}
+
+/* ---------- pastki navigatsiya (Instagram/Duolingo uslubida, faqat mobil) ---------- */
+.bottom-nav{display:none}
+@media(max-width:700px){
+  .bottom-nav{
+    display:flex;position:fixed;left:0;right:0;bottom:0;z-index:50;
+    padding:6px 4px calc(6px + env(safe-area-inset-bottom, 0px));
+    background:color-mix(in srgb, var(--surface) 88%, transparent);
+    backdrop-filter:saturate(1.6) blur(16px);-webkit-backdrop-filter:saturate(1.6) blur(16px);
+    border-top:1px solid var(--line);box-shadow:0 -4px 16px rgba(16,28,24,.06);
+  }
+  .bottom-nav-item{
+    flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
+    padding:6px 2px;border:none;background:none;color:var(--faint);cursor:pointer;
+    border-radius:12px;transition:transform .15s var(--ease), color .2s;
+  }
+  .bottom-nav-item:active{transform:scale(.92)}
+  .bottom-nav-item.active{color:var(--brand)}
+  .bottom-nav-icon{font-size:21px;line-height:1}
+  .bottom-nav-label{font-size:10px;font-weight:650;letter-spacing:.01em}
+  .bottom-nav-item.active .bottom-nav-icon{transform:translateY(-1px);filter:drop-shadow(0 2px 4px var(--brand-glow))}
+
+  /* Kontent pastki panel ostida qolib ketmasligi uchun bo'sh joy */
+  .game-shell,.tool-shell,.certificate-page{padding-bottom:calc(78px + env(safe-area-inset-bottom, 0px))}
 }
