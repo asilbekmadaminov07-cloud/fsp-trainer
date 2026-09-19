@@ -6,7 +6,10 @@ import { daysSince } from '@/lib/practice';
 import { useCountUp } from '@/lib/useCountUp';
 import SensorToggle from '@/app/components/SensorToggle';
 import BottomNav from '@/app/components/BottomNav';
-import { IconCoin, IconStar, IconFire } from '@/app/components/Icons';
+import { IconCoin, IconStar, IconFire, IconCamera } from '@/app/components/Icons';
+
+const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
+const ALLOWED_AVATAR_TYPES = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
 
 // Barcha ichki sahifalar uchun umumiy tepa panel: hisob ma'lumotlari,
 // amaliyot statistikasi va chiqish tugmasi bitta joyda.
@@ -14,7 +17,13 @@ export default function Header({ profile, backHref }){
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || '');
+  const [uploading, setUploading] = useState(false);
+  const [avatarError, setAvatarError] = useState('');
   const boxRef = useRef(null);
+  const fileInputRef = useRef(null);
+
+  useEffect(() => { setAvatarUrl(profile?.avatar_url || ''); }, [profile?.avatar_url]);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setEmail(data?.user?.email || ''));
@@ -29,6 +38,28 @@ export default function Header({ profile, backHref }){
   async function handleLogout(){
     await supabase.auth.signOut();
     router.replace('/');
+  }
+
+  async function handleAvatarChange(e){
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file || !profile?.id) return;
+    setAvatarError('');
+    const ext = ALLOWED_AVATAR_TYPES[file.type];
+    if (!ext) { setAvatarError('Nur JPG, PNG oder WEBP erlaubt.'); return; }
+    if (file.size > MAX_AVATAR_BYTES) { setAvatarError('Bild ist zu groß (max. 2 MB).'); return; }
+
+    setUploading(true);
+    const path = `${profile.id}/avatar.${ext}`;
+    const { error: upErr } = await supabase.storage.from('avatars').upload(path, file, { upsert: true, cacheControl: '3600' });
+    if (upErr) { setAvatarError('Hochladen fehlgeschlagen. Bitte erneut versuchen.'); setUploading(false); return; }
+
+    const { data: pub } = supabase.storage.from('avatars').getPublicUrl(path);
+    const url = pub.publicUrl + '?t=' + Date.now();
+    const { error: dbErr } = await supabase.from('profiles').update({ avatar_url: url }).eq('id', profile.id);
+    setUploading(false);
+    if (dbErr) { setAvatarError('Speichern fehlgeschlagen. Bitte erneut versuchen.'); return; }
+    setAvatarUrl(url);
   }
 
   const coinsDisplay = useCountUp(profile?.coins ?? 0);
@@ -55,7 +86,9 @@ export default function Header({ profile, backHref }){
           <div className="acct" ref={boxRef}>
             <button className="acct-menu-btn" onClick={() => setOpen(o => !o)} aria-label="Konto">
               <div className={'acct-ring' + (practicedToday ? ' ring-active' : '')}>
-                <div className="acct-avatar">{initials}</div>
+                <div className="acct-avatar">
+                  {avatarUrl ? <img src={avatarUrl} alt="" /> : initials}
+                </div>
               </div>
             </button>
             <div className="acct-info">
@@ -65,6 +98,28 @@ export default function Header({ profile, backHref }){
 
             {open && (
               <div className="acct-dropdown">
+                <div className="acct-dropdown-avatar">
+                  <div className="acct-avatar-lg">
+                    {avatarUrl ? <img src={avatarUrl} alt="" /> : initials}
+                    {uploading && <span className="avatar-uploading">…</span>}
+                  </div>
+                  <button
+                    type="button"
+                    className="avatar-change-btn"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                  >
+                    <IconCamera width={14} height={14} /> Profilbild ändern
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    style={{ display: 'none' }}
+                    onChange={handleAvatarChange}
+                  />
+                  {avatarError && <span className="error-text" style={{ marginTop: 4 }}>{avatarError}</span>}
+                </div>
                 <div className="row-item"><span>Angemeldet als</span><b style={{ maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{email}</b></div>
                 <div className="row-item"><span>Mitglied seit</span><b>{memberDays} Tage</b></div>
                 <div className="row-item"><span>Geübt an</span><b>{practiceDays} Tagen</b></div>

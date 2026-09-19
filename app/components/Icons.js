@@ -29,3 +29,12 @@ export function IconFire(p){
 export function IconChevronRight(p){
   return <svg {...base} {...p}><path d="m9 6 6 6-6 6"/></svg>;
 }
+export function IconCamera(p){
+  return <svg {...base} {...p}><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13" r="3.3"/></svg>;
+}
+export function IconLock(p){
+  return <svg {...base} {...p}><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>;
+}
+export function IconMedal(p){
+  return <svg {...base} {...p}><circle cx="12" cy="14" r="6.5"/><path d="m9 8-3-5M15 8l3-5M12 11.2v5.6M9.5 13.2 12 11.2l2.5 2"/></svg>;
+}

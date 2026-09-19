@@ -7,6 +7,7 @@ import { touchPracticeDay, daysSince } from '@/lib/practice';
 import Header from '@/app/components/Header';
 import TiltCard from '@/app/components/TiltCard';
 import Onboarding from '@/app/components/Onboarding';
+import AchievementBadges from '@/app/components/AchievementBadges';
 import ReferralCard from '@/app/components/ReferralCard';
 import PushOptIn from '@/app/components/PushOptIn';
 import { HomeSkeleton } from '@/app/components/Skeleton';
@@ -175,18 +176,7 @@ export default function Home() {
         <div className="two-col">
           <div className="panel">
             <h3>Nachweise</h3>
-            <div className="row-list">
-              {ACHIEVEMENTS.map(a => {
-                const done = solved >= a.need;
-                return (
-                  <div className={'ach' + (done ? ' done' : '')} key={a.id}>
-                    <span className="ach-dot" />
-                    <span style={{ flex: 1 }}>{a.title}</span>
-                    {!done && <span style={{ fontSize: 12, color: 'var(--faint)' }}>{solved}/{a.need}</span>}
-                  </div>
-                );
-              })}
-            </div>
+            <AchievementBadges achievements={ACHIEVEMENTS} current={solved} />
           </div>
 
           <div className="panel">
