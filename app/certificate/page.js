@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
+import ShareButton from '@/app/components/ShareButton';
 
 export default function CertificatePage() {
   const router = useRouter();
@@ -24,7 +25,11 @@ export default function CertificatePage() {
   if (data.sessions < 7) return <main className="certificate-page locked-cert"><div className="panel"><h1>Zertifikat noch gesperrt</h1><p>Schließen Sie an 7 verschiedenen Tagen das 10-Minuten-Training ab. Aktuell: {data.sessions}/7.</p><a className="quiz-btn" href="/daily">Heute trainieren</a></div></main>;
 
   return <main className="certificate-page">
-    <div className="certificate-actions"><a href="/home" className="quiz-btn ghost">← Übersicht</a><button className="quiz-btn" onClick={() => window.print()}>Als PDF speichern / drucken</button></div>
+    <div className="certificate-actions">
+      <a href="/home" className="quiz-btn ghost">← Übersicht</a>
+      <button className="quiz-btn" onClick={() => window.print()}>Als PDF speichern / drucken</button>
+      <ShareButton kicker="TEILNAHMENACHWEIS" title="FSP-Tagestraining absolviert" name={data.name} stat={data.sessions} statLabel="Tage trainiert" label="📤 Zertifikat teilen" />
+    </div>
     <section className="certificate">
       <div className="cert-mark">FSP<span>.</span>Trainer</div>
       <div className="cert-kicker">TEILNAHMENACHWEIS</div>

@@ -59,6 +59,7 @@ export default function Header({ profile, backHref }){
                 <div className="row-item"><span>Angemeldet als</span><b style={{ maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{email}</b></div>
                 <div className="row-item"><span>Mitglied seit</span><b>{memberDays} Tage</b></div>
                 <div className="row-item"><span>Geübt an</span><b>{practiceDays} Tagen</b></div>
+                {profile.bundesland && <div className="row-item"><span>Ziel-Bundesland</span><b>{profile.bundesland}</b></div>}
                 <a href="/mistakes" className="row-item" style={{ cursor: 'pointer' }}><span>Meine Fehler</span><b>→</b></a>
                 <a href="/daily" className="row-item" style={{ cursor: 'pointer' }}><span>10-Minuten-Training</span><b>→</b></a>
                 <a href="/coach" className="row-item" style={{ cursor: 'pointer' }}><span>AI-Lerncoach</span><b>→</b></a>

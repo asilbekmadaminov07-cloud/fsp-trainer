@@ -6,6 +6,8 @@ import { levelFromXp, careerStage } from '@/lib/career';
 import { touchPracticeDay, daysSince } from '@/lib/practice';
 import Header from '@/app/components/Header';
 import TiltCard from '@/app/components/TiltCard';
+import ReferralCard from '@/app/components/ReferralCard';
+import PushOptIn from '@/app/components/PushOptIn';
 
 const ACHIEVEMENTS = [
   { id: 'first_case', title: 'Erste Diagnose bestanden', need: 1 },
@@ -114,6 +116,7 @@ export default function Home() {
       <Header profile={profile} />
 
       <div className="game-shell">
+        <PushOptIn userId={profile.id} />
         <TiltCard className="hero-card">
           <div className="hero-rank">{stage.title}</div>
           <div className="hero-sub">{profile.full_name}</div>
@@ -130,6 +133,7 @@ export default function Home() {
         <div className="dashboard-quick">
           <a href="/daily"><span>⚡</span><div><b>Heutiges 10-Minuten-Training</b><small>Challenge starten und Serie halten</small></div><em>Start →</em></a>
           <a href="/coach"><span>🧠</span><div><b>Ihr persönlicher Lernplan</b><small>AI-Coach analysiert Ihre Fehler</small></div><em>Öffnen →</em></a>
+          <a href="/partner"><span>🤝</span><div><b>Partner-Übung</b><small>Live mit einem anderen Kandidaten üben</small></div><em>Öffnen →</em></a>
         </div>
 
         <div className="section-heading-row">
@@ -151,6 +155,8 @@ export default function Home() {
             </TiltCard>
           ))}
         </div>
+
+        <ReferralCard profile={profile} />
 
         <div className="section-title">Fortschritt</div>
         <div className="two-col">

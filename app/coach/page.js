@@ -16,14 +16,16 @@ export default function CoachPage() {
     const { data: sessionData } = await supabase.auth.getSession();
     const userId = sessionData.session?.user?.id;
     if (!userId) return;
-    const { data: mistakes = [] } = await supabase
-      .from('mistakes')
-      .select('topic, case_name, difficulty, question, chosen, correct')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(30);
+    const [{ data: mistakes = [] }, { data: prof }] = await Promise.all([
+      supabase.from('mistakes')
+        .select('topic, case_name, difficulty, question, chosen, correct')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(30),
+      supabase.from('profiles').select('bundesland').eq('id', userId).single()
+    ]);
     try {
-      const result = await apiPost('/api/coach', { mistakes });
+      const result = await apiPost('/api/coach', { mistakes, bundesland: prof?.bundesland || '' });
       setPlan(result.plan); setSource(result.generatedBy);
     } catch (e) {
       setPlan(buildFallbackPlan(mistakes)); setSource('local'); setError(e.message);

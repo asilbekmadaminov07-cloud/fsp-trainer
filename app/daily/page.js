@@ -5,6 +5,7 @@ import ToolShell from '@/app/tools/ToolShell';
 import { apiPost } from '@/lib/api';
 import { primaryFocus } from '@/lib/learning';
 import { supabase } from '@/lib/supabaseClient';
+import ShareButton from '@/app/components/ShareButton';
 
 function DailyTraining() {
   const params = useSearchParams();
@@ -104,7 +105,11 @@ function DailyTraining() {
         <div><span className="eyebrow">TAGESZIEL ERREICHT</span><h2>Stark trainiert!</h2><p>{elapsedMinutes} Minuten · {focus}</p>
           {result?.points > 0 && <div className="reward-toast">+{result.points} Ligapunkte</div>}
           {!result?.first_completion_today && completedToday && <p className="coach-note">Die heutige Belohnung wurde bereits gutgeschrieben.</p>}
-          <div className="quiz-actions"><a className="quiz-btn" href="/coach">Zum Lernplan</a>{result?.certificate_unlocked && <a className="quiz-btn ghost" href="/certificate">Zertifikat öffnen</a>}</div>
+          <div className="quiz-actions">
+            <a className="quiz-btn" href="/coach">Zum Lernplan</a>
+            {result?.certificate_unlocked && <a className="quiz-btn ghost" href="/certificate">Zertifikat öffnen</a>}
+            <ShareButton kicker="TAGESZIEL ERREICHT" title={focus} stat={`${score}/5`} statLabel="richtig beantwortet" />
+          </div>
         </div>
       </section>}
 

@@ -47,14 +47,20 @@ export async function POST(req) {
   const gate = await guard(req, 'coach');
   if (gate.error) return Response.json({ error: gate.error }, { status: gate.status });
 
-  const mistakes = cleanMistakes((await req.json().catch(() => ({}))).mistakes);
+  const payload = await req.json().catch(() => ({}));
+  const mistakes = cleanMistakes(payload.mistakes);
+  const bundesland = typeof payload.bundesland === 'string' ? payload.bundesland.slice(0, 60) : '';
   const fallback = buildFallbackPlan(mistakes);
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return Response.json({ plan: fallback, generatedBy: 'local' });
 
+  const stateNote = bundesland
+    ? ` Der Kandidat plant die FSP bei der Landesärztekammer/Zahnärztekammer in ${bundesland} abzulegen — erwähne im Coach-Tipp bei Gelegenheit eine praktische, korrekte Besonderheit dieses Bundeslandes (z. B. Anmeldeverfahren, Bearbeitungsdauer), falls dir dazu etwas Verlässliches einfällt; erfinde nichts, wenn du unsicher bist.`
+    : '';
+
   const body = {
     contents: [{ role: 'user', parts: [{ text: JSON.stringify(mistakes) }] }],
-    systemInstruction: { parts: [{ text: `Du bist ein persönlicher FSP-Lerncoach für Zahnmedizin. Analysiere die Fehlerliste und erstelle einen realistischen 7-Tage-Plan. Jeder Tag dauert genau 10 Minuten. Priorisiere wiederkehrende Denkfehler, nicht bloß einzelne Fragen. Schreibe klares Deutsch, motivierend aber konkret. Gib genau 3 Schwachpunkte und genau 7 Tage zurück. Keine erfundenen Leistungen.` }] },
+    systemInstruction: { parts: [{ text: `Du bist ein persönlicher FSP-Lerncoach für Zahnmedizin. Analysiere die Fehlerliste und erstelle einen realistischen 7-Tage-Plan. Jeder Tag dauert genau 10 Minuten. Priorisiere wiederkehrende Denkfehler, nicht bloß einzelne Fragen. Schreibe klares Deutsch, motivierend aber konkret. Gib genau 3 Schwachpunkte und genau 7 Tage zurück. Keine erfundenen Leistungen.${stateNote}` }] },
     generationConfig: {
       maxOutputTokens: 1800,
       temperature: 0.45,
