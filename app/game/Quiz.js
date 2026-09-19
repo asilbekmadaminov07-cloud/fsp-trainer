@@ -36,28 +36,48 @@ export default function Quiz({ currentCase, transcript, onPassed, onClose, onAdv
     setLoading(true);
     setError('');
     setQuestions(null);
-    apiRawPost('/api/quiz', {
+
+    async function fetchOnce(){
+      const r = await apiRawPost('/api/quiz', {
         caseName: currentCase.name,
         meta: currentCase.meta,
         diagnosis: currentCase.diagnosis,
         difficulty: currentCase.difficulty,
         transcript
-      })
-      .then(async r => {
-        const d = await r.json().catch(() => ({}));
-        if (!r.ok) throw new Error(d.error || 'Fragen konnten nicht geladen werden');
-        return d;
-      })
-      .then(d => {
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        const err = new Error(d.error || 'Fragen konnten nicht geladen werden');
+        err.status = r.status;
+        throw err;
+      }
+      return d;
+    }
+
+    // 502/503/504 odatda o'tkinchi (server band yoki vaqt tugagan) — foydalanuvchiga
+    // xato ko'rsatishdan oldin sukut bo'yicha bir marta avtomatik qayta urinamiz.
+    (async () => {
+      try {
+        const d = await fetchOnce();
         if (!alive) return;
         setQuestions(d.questions);
         setLoading(false);
-      })
-      .catch(e => {
+      } catch (e) {
         if (!alive) return;
-        setError(e.message);
-        setLoading(false);
-      });
+        if (![502, 503, 504].includes(e.status)) { setError(e.message); setLoading(false); return; }
+        try {
+          const d = await fetchOnce();
+          if (!alive) return;
+          setQuestions(d.questions);
+          setLoading(false);
+        } catch (e2) {
+          if (!alive) return;
+          setError(e2.message);
+          setLoading(false);
+        }
+      }
+    })();
+
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [attempt]);
@@ -143,7 +163,7 @@ export default function Quiz({ currentCase, transcript, onPassed, onClose, onAdv
       <div className="quiz-box">
         <div className="quiz-loading">
           Die Prüfungsfragen werden für diesen Fall erstellt…
-          <span className="quiz-sub">Sie werden jedes Mal neu generiert.</span>
+          <span className="quiz-sub">Das kann bis zu 30 Sekunden dauern — sie werden jedes Mal neu generiert.</span>
         </div>
       </div>
     );

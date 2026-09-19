@@ -151,6 +151,7 @@ h1,h2,h3{font-family:var(--serif);letter-spacing:-.015em;line-height:1.18}
   box-shadow:0 0 0 3px var(--brand-glow), inset 0 1px 2px rgba(16,28,24,.04);
 }
 .error-text{color:var(--mark);font-size:13px;margin-top:8px}
+.anamnese-hint{margin-top:10px;padding:10px 13px;border-radius:var(--r-sm);background:var(--brand-tint);color:var(--brand-dark);font-size:13px;line-height:1.5;animation:msgIn .25s var(--ease) both}
 
 .auth-shell{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px}
 .auth-box{width:100%;max-width:392px;background:linear-gradient(180deg,var(--surface),var(--surface-2));border:1px solid var(--line);border-radius:var(--r-xl);padding:34px 30px;box-shadow:var(--sh-4),var(--edge)}
@@ -291,6 +292,7 @@ h1,h2,h3{font-family:var(--serif);letter-spacing:-.015em;line-height:1.18}
 .msg.patient{background:linear-gradient(180deg,var(--brand-tint),color-mix(in srgb,var(--brand-tint) 80%,var(--surface)));color:var(--brand-dark);align-self:flex-start;border-bottom-left-radius:4px}
 .msg.doctor{background:var(--surface);border:1px solid var(--line-soft);align-self:flex-end;border-bottom-right-radius:4px}
 .msg-image{padding:0;background:none !important;border:none !important;box-shadow:none;max-width:90%}
+.msg-error{background:var(--mark-tint) !important;color:var(--mark) !important;font-size:13px}
 .img-caption{background:var(--brand-tint);color:var(--brand-dark);padding:10px 14px;border-radius:14px;border-bottom-left-radius:4px;font-size:14px;margin-bottom:8px;display:inline-block;box-shadow:var(--sh-1)}
 .img-frame{
   border:1px solid var(--line-strong);border-radius:var(--r);overflow:hidden;background:#050706;

@@ -9,6 +9,7 @@ import { touchPracticeDay } from '@/lib/practice';
 import { awardProgress, newAttemptId } from '@/lib/progress';
 import { playCorrect, playWrong } from '@/lib/sound';
 import { burstConfetti } from '@/lib/confetti';
+import { friendlyError } from '@/lib/errors';
 import Header from '@/app/components/Header';
 import TiltCard from '@/app/components/TiltCard';
 import ToothChart from '@/app/components/ToothChart';
@@ -71,6 +72,7 @@ export default function Game() {
   const [sending, setSending] = useState(false);
   const [diagInput, setDiagInput] = useState('');
   const [diagError, setDiagError] = useState(false);
+  const [anamneseHint, setAnamneseHint] = useState('');
   const [showTeeth, setShowTeeth] = useState(false);
   const [selectedTooth, setSelectedTooth] = useState(null);
   const [evalResult, setEvalResult] = useState(null);
@@ -248,6 +250,7 @@ export default function Game() {
     setEvalResult(null);
     setDiagInput('');
     setDiagError(false);
+    setAnamneseHint('');
     setAiError('');
     setShowTeeth(false);
     setSelectedTooth(null);
@@ -354,6 +357,7 @@ export default function Game() {
     const c = stateRef.current.currentCase;
     if (!text || !c) return;
     setInput('');
+    setAnamneseHint('');
     const newHistory = [...stateRef.current.history, { role: 'user', content: text }];
     setHistory(newHistory);
     setSending(true);
@@ -362,7 +366,7 @@ export default function Game() {
       setHistory(h => [...h, { role: 'assistant', content: reply || '...' }]);
       if (activeRef.current && reply) await speak(reply);
     } catch (e) {
-      setHistory(h => [...h, { role: 'assistant', content: '[Fehler: keine Antwort erhalten]' }]);
+      setHistory(h => [...h, { role: 'assistant', type: 'error', content: friendlyError(e.message) }]);
     }
     setSending(false);
   }
@@ -378,10 +382,11 @@ export default function Game() {
       const missing = requiredQuestions - doctorQuestions;
       const hint = `Die Anamnese ist noch nicht vollständig. Stellen Sie mindestens ${missing} weitere gezielte ${missing === 1 ? 'Frage' : 'Fragen'}, bevor Sie die Diagnose abgeben.`;
       if (activeRef.current) await speak(hint);
-      else alert(hint);
+      setAnamneseHint(hint);
       return;
     }
 
+    setAnamneseHint('');
     setEvalLoading(true);
     setEvalResult(null);
     const transcript = hist.map(m => (m.role === 'user' ? 'Arzt/Ärztin: ' : 'Patient/in: ') + m.content).join('\n');
@@ -613,6 +618,9 @@ export default function Game() {
                     </div>
                   );
                 }
+                if (m.type === 'error') {
+                  return <div className="msg patient msg-error" key={i}>{m.content}</div>;
+                }
                 return (
                   <div className={'msg ' + (m.role === 'assistant' ? 'patient' : 'doctor')} key={i}>
                     {m.content}
@@ -647,6 +655,7 @@ export default function Game() {
                 <button onClick={getEval} disabled={evalLoading}>Auswertung anzeigen</button>
               </div>
               {diagError && <p className="error-text">Bitte tragen Sie zuerst Ihre Diagnose ein.</p>}
+              {anamneseHint && <p className="anamnese-hint">🩺 {anamneseHint}</p>}
               <button type="button" className="tooth-toggle" onClick={() => setShowTeeth(v => !v)}>
                 {showTeeth ? 'Zahnschema ausblenden' : '🦷 Zahnschema öffnen — Zahn auswählen'}
               </button>
