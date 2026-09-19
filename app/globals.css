@@ -217,8 +217,8 @@ h1,h2,h3{font-family:var(--serif);letter-spacing:-.015em;line-height:1.18}
   background:var(--surface-3);border:1px solid var(--line-soft);box-shadow:var(--edge);
 }
 .stat b{font-size:14px;font-weight:650}
-.stat.coins b{color:var(--gold)}
-.stat.level b{color:var(--brand)}
+.stat.coins b,.stat.coins svg{color:var(--gold)}
+.stat.level b,.stat.level svg{color:var(--brand)}
 .logout-btn{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);padding:8px 13px;font-size:13px;cursor:pointer;color:var(--muted);box-shadow:var(--sh-1);transition:.18s var(--ease)}
 .logout-btn:hover{border-color:var(--brand);color:var(--brand);transform:translateY(-1px);box-shadow:var(--sh-2)}
 
@@ -373,6 +373,9 @@ h1,h2,h3{font-family:var(--serif);letter-spacing:-.015em;line-height:1.18}
 .quiz-sub{font-size:12px;font-style:normal;color:var(--faint)}
 .quiz-head{display:flex;align-items:center;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:10px}
 .quiz-lives{letter-spacing:4px;color:var(--mark);font-size:14px}
+.quiz-tally{display:flex;gap:10px;font-size:13px;font-weight:650}
+.quiz-tally .tally-ok{color:var(--easy)}
+.quiz-tally .tally-bad{color:var(--mark)}
 .quiz-bar{height:4px;background:var(--line-soft);border-radius:99px;overflow:hidden;margin-bottom:20px;box-shadow:inset 0 1px 2px rgba(16,28,24,.08)}
 .quiz-bar span{display:block;height:100%;background:linear-gradient(90deg,var(--brand),var(--brand-2));transition:width .35s var(--ease);box-shadow:0 0 8px var(--brand-glow)}
 .quiz-topic{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--faint);margin-bottom:8px;font-weight:600}

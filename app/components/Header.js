@@ -6,6 +6,7 @@ import { daysSince } from '@/lib/practice';
 import { useCountUp } from '@/lib/useCountUp';
 import SensorToggle from '@/app/components/SensorToggle';
 import BottomNav from '@/app/components/BottomNav';
+import { IconCoin, IconStar, IconFire } from '@/app/components/Icons';
 
 // Barcha ichki sahifalar uchun umumiy tepa panel: hisob ma'lumotlari,
 // amaliyot statistikasi va chiqish tugmasi bitta joyda.
@@ -47,9 +48,9 @@ export default function Header({ profile, backHref }){
           FSP<span style={{ color: 'var(--brand)' }}>.</span>Trainer
         </a>
         <div className="stats">
-          <span className="stat coins" title="Praxiskonto">💰 <b>{coinsDisplay}</b></span>
-          <span className="stat level" title="Stufe">⭐ <b>{profile.level ?? 1}</b></span>
-          <span className="streak-badge" title="An diesen Tagen geübt">🔥 <b>{practiceDays}</b><span className="streak-word">Tage</span></span>
+          <span className="stat coins" title="Praxiskonto"><IconCoin width={15} height={15} /> <b>{coinsDisplay}</b></span>
+          <span className="stat level" title="Stufe"><IconStar width={15} height={15} /> <b>{profile.level ?? 1}</b></span>
+          <span className="streak-badge" title="An diesen Tagen geübt"><IconFire width={15} height={15} /> <b>{practiceDays}</b><span className="streak-word">Tage</span></span>
 
           <div className="acct" ref={boxRef}>
             <button className="acct-menu-btn" onClick={() => setOpen(o => !o)} aria-label="Konto">

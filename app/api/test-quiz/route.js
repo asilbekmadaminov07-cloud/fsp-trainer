@@ -17,7 +17,19 @@ const ALL_TOPICS = [
   'Notfallsituationen und wann eine Überweisung nötig ist',
   'Patientenaufklärung in einfacher, verständlicher Sprache',
   'Arztbrief: Struktur und formale Sprache',
-  'Grammatik und Ausdruck im ärztlichen Gespräch (Konjunktiv, Höflichkeitsform, Fachsyntax)'
+  'Grammatik und Ausdruck im ärztlichen Gespräch (Konjunktiv, Höflichkeitsform, Fachsyntax)',
+  'Klinische Untersuchung und Diagnostikschritte',
+  'Aufklärung, Einwilligung und Patientenrechte',
+  'Rechtliche und ethische Grenzen der zahnärztlichen Tätigkeit'
+];
+
+const FORMATS = [
+  'Direkte Wissensfrage',
+  'Kurze Fallvignette mit anschließender Frage',
+  '"Was tun Sie als Nächstes?"',
+  '"Welche Aussage ist FALSCH?"',
+  'Begriffszuordnung (Fachsprache vs. Patientensprache)',
+  'Kommunikationsfrage: beste Formulierung gegenüber dem Patienten'
 ];
 
 function buildSystem(topics){
@@ -32,7 +44,8 @@ REGELN:
 4. Verteile die Fragen über diese Themen: ${topics.join(' · ')}.
 5. "explanation" erklärt in 1-2 Sätzen, warum die richtige Antwort stimmt.
 6. Alles auf Deutsch, kein Markdown, keine Nummerierung im Fragetext.
-7. Jede Frage muss anders formuliert sein als eine typische Lehrbuchfrage — variiere Formulierung und Reihenfolge der Optionen.`;
+7. Jede Frage muss anders formuliert sein als eine typische Lehrbuchfrage — variiere Formulierung und Reihenfolge der Optionen.
+8. Mische die Fragetypen deutlich über die 10 Fragen hinweg, zum Beispiel: ${FORMATS.join(' · ')}. Nicht mehr als 2-3 Fragen im selben Format hintereinander.`;
 }
 
 const SCHEMA = {

@@ -18,7 +18,22 @@ const TOPICS = [
   'Medikamente, Allgemeinerkrankungen und Risiken (Wechselwirkungen, Antibiose, Blutverdünnung, Schwangerschaft)',
   'Notfall und Überweisung: wann ist der Fall nicht mehr zahnärztlich',
   'Patientenkommunikation: wie wird der Befund laienverständlich erklärt',
-  'Fachsprache: korrekter Fachbegriff für einen umgangssprachlichen Ausdruck'
+  'Fachsprache: korrekter Fachbegriff für einen umgangssprachlichen Ausdruck',
+  'Klinische Untersuchung: welcher Test oder Handgriff gehört als Nächstes zur körperlichen Untersuchung',
+  'Aufklärung und Einwilligung: was muss der Patient vor einem Eingriff erfahren',
+  'Dokumentation und Arztbrief: welche Angabe darf in der Fallzusammenfassung nicht fehlen',
+  'Rechtliche und ethische Grenzen: Schweigepflicht, Meldepflicht, Patientenautonomie in diesem Fall'
+];
+
+// Format-turlari — Gemini har safar boshqa savol shaklini ishlatsin,
+// shunda barcha 20 ta savol bir xil qolipda bo'lib qolmaydi.
+const FORMATS = [
+  'Direkte Wissensfrage ("Was ist...", "Welche Aussage trifft zu...")',
+  'Fallvignette mit kurzer neuer Zusatzinformation, dann eine Frage dazu',
+  '"Was tun Sie als Nächstes?" — Frage zur richtigen Reihenfolge des Vorgehens',
+  '"Welche Aussage ist FALSCH?" — die drei falschen Optionen sind korrekt, eine ist falsch',
+  'Begriffszuordnung: Fachbegriff vs. Patientenbeschreibung',
+  'Kommunikationsfrage: welche Formulierung ist gegenüber dem Patienten am besten geeignet'
 ];
 
 function buildSystem(){
@@ -35,7 +50,11 @@ REGELN — strikt einhalten:
 6. Verteile die Fragen über die vorgegebenen Themenbereiche, mehrere Fragen pro Bereich sind erlaubt.
 7. "explanation" erklärt in 1-3 Sätzen, WARUM die richtige Antwort richtig ist UND worin der typische Denkfehler bei den falschen Antworten besteht. Der Kandidat liest das nach einem Fehler — es muss ihm beibringen, was er übersehen hat.
 8. Alles auf Deutsch. Kein Markdown, keine Aufzählungszeichen, keine Nummerierung im Fragetext.
-9. Verrate in der Fragestellung nicht die Antwort einer anderen Frage.`;
+9. Verrate in der Fragestellung nicht die Antwort einer anderen Frage.
+10. Variiere das FRAGEFORMAT über die 20 Fragen hinweg deutlich (siehe FRAGEFORMATE unten) — nicht alle Fragen dürfen gleich klingen wie "Was ist die wahrscheinlichste Diagnose?". Mische direkte Wissensfragen, Fallvignetten mit neuer Zusatzinformation, "Was tun Sie als Nächstes?"-Fragen, "Welche Aussage ist FALSCH?"-Fragen, Begriffszuordnungen und Kommunikationsfragen.
+
+FRAGEFORMATE (zur Inspiration, mische sie):
+${FORMATS.map((f, i) => (i + 1) + '. ' + f).join('\n')}`;
 }
 
 function buildPrompt({ caseName, meta, diagnosis, difficulty, transcript }){

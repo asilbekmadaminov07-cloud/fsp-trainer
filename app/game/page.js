@@ -440,6 +440,17 @@ export default function Game() {
     return { xp, coins, levelUp: newLevel > oldLevel, title: careerStage(newLevel).title };
   }
 
+  // Imtihondan o'tilgach, keyingi qiyinlik darajasiga o'tkazadi (agar bor bo'lsa)
+  function advanceDifficulty(){
+    const i = DIFFS.indexOf(stateRef.current.currentDiff);
+    setShowQuiz(false);
+    if (i >= 0 && i < DIFFS.length - 1) {
+      setCurrentDiff(DIFFS[i + 1]);
+    } else {
+      newCase();
+    }
+  }
+
   function quizTranscript(){
     return (stateRef.current.history || [])
       .filter(m => m.type !== 'image')
@@ -539,6 +550,7 @@ export default function Game() {
                 transcript={quizTranscript()}
                 onPassed={handleQuizPassed}
                 onClose={() => { setShowQuiz(false); newCase(); }}
+                onAdvance={advanceDifficulty}
                 userId={profile.id}
               />
             ) : (
@@ -642,8 +654,8 @@ export default function Game() {
             {evalResult && !evalLoading && (
               <div className="exam-cta">
                 <div className="exam-cta-text">
-                  <b>Prüfung ({'20'} Fragen)</b>
-                  <span>Bei {'3'} Fehlern endet die Prüfung und beginnt mit neuen Fragen von vorne. Nur ab 18 richtigen Antworten steigen Sie auf.</span>
+                  <b>Prüfung (20 Fragen)</b>
+                  <span>Sie beantworten alle 20 Fragen. Am Ende sehen Sie Ihr Ergebnis — ab 18 richtigen Antworten haben Sie bestanden und steigen zur nächsten Stufe auf.</span>
                 </div>
                 <button className="quiz-btn" onClick={() => setShowQuiz(true)}>Prüfung starten</button>
               </div>

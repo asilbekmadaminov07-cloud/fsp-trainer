@@ -7,12 +7,13 @@ import { playCorrect, playWrong, playLevelUp } from '@/lib/sound';
 import { burstConfetti } from '@/lib/confetti';
 import { friendlyError } from '@/lib/errors';
 
-// 20 ta savolli imtihon.
-// Qoida: 3-xato — imtihon tugaydi va boshidan boshlanadi.
-// Ya'ni o'tish uchun kamida 18/20 kerak.
-const MAX_WRONG = 3;
+// 20 ta savolli imtihon. Barcha 20 ta savol oxirigacha davom etadi — erta
+// to'xtamaydi. Oxirida umumiy ball va natija (o'tdi/o'tmadi) ko'rsatiladi.
+// O'tish uchun kamida 18/20 kerak.
+const TOTAL = 20;
+const PASS_THRESHOLD = 18;
 
-export default function Quiz({ currentCase, transcript, onPassed, onClose, userId }) {
+export default function Quiz({ currentCase, transcript, onPassed, onClose, onAdvance, userId }) {
   const [questions, setQuestions] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -22,6 +23,7 @@ export default function Quiz({ currentCase, transcript, onPassed, onClose, userI
   const [selected, setSelected] = useState(null);
   const [revealed, setRevealed] = useState(false);
   const [wrong, setWrong] = useState([]);
+  const [correctCount, setCorrectCount] = useState(0);
   const [status, setStatus] = useState('running'); // running | passed | failed
   const [awarded, setAwarded] = useState(null);
   const attemptIdRef = useRef(newAttemptId());
@@ -76,7 +78,7 @@ export default function Quiz({ currentCase, transcript, onPassed, onClose, userI
   function restart(){
     attemptIdRef.current = newAttemptId();
     setIdx(0); setSelected(null); setRevealed(false);
-    setWrong([]); setStatus('running'); setAwarded(null);
+    setWrong([]); setCorrectCount(0); setStatus('running'); setAwarded(null);
     setAttempt(a => a + 1);   // yangi savollar yaratiladi
   }
 
@@ -91,31 +93,40 @@ export default function Quiz({ currentCase, transcript, onPassed, onClose, userI
     setRevealed(true);
     if (selected === q.correct) {
       playCorrect();
+      setCorrectCount(c => c + 1);
     } else {
       playWrong();
     }
     if (selected !== q.correct) {
-      const next = [...wrong, {
+      setWrong(w => [...w, {
         nr: idx + 1,
         q: q.q,
         chosen: q.options[selected],
         correct: q.options[q.correct],
         explanation: q.explanation,
         topic: q.topic
-      }];
-      setWrong(next);
-      if (next.length >= MAX_WRONG) setStatus('failed');
+      }]);
     }
   }
 
-  async function next(){
-    if (status === 'failed') return;
-    if (idx + 1 >= questions.length) {
+  async function finish(){
+    const passed = correctCount >= PASS_THRESHOLD;
+    if (passed) {
       setStatus('passed');
-      const r = await onPassed(questions.length - wrong.length, questions.length, attemptIdRef.current);
+      const kind = correctCount === questions.length ? 'perfect' : 'pass';
+      const r = await onPassed(correctCount, questions.length, attemptIdRef.current, kind);
       setAwarded(r || null);
       if (r?.levelUp) playLevelUp(); else playCorrect();
       burstConfetti();
+    } else {
+      setStatus('failed');
+      playWrong();
+    }
+  }
+
+  function next(){
+    if (idx + 1 >= questions.length) {
+      finish();
       return;
     }
     setIdx(idx + 1);
@@ -148,12 +159,13 @@ export default function Quiz({ currentCase, transcript, onPassed, onClose, userI
   }
 
   if (status === 'failed') {
+    const score = correctCount;
     return (
       <div className="quiz-box">
-        <div className="quiz-verdict failed">Nicht bestanden — {MAX_WRONG} Fehler</div>
+        <div className="quiz-verdict failed">Nicht bestanden — {score} von {questions.length}</div>
         <p className="quiz-note">
-          Die Prüfung endet nach {MAX_WRONG} Fehlern. Sie müssen von vorne beginnen —
-          mit neuen Fragen. Lesen Sie zuerst, was schiefgelaufen ist:
+          Für den Aufstieg sind mindestens {PASS_THRESHOLD} von {questions.length} richtigen Antworten nötig.
+          Lesen Sie zuerst, was schiefgelaufen ist:
         </p>
         <MistakeList wrong={wrong} />
         <div className="quiz-actions">
@@ -165,7 +177,7 @@ export default function Quiz({ currentCase, transcript, onPassed, onClose, userI
   }
 
   if (status === 'passed') {
-    const score = questions.length - wrong.length;
+    const score = correctCount;
     return (
       <div className="quiz-box">
         <div className="quiz-verdict passed">Bestanden — {score} von {questions.length}</div>
@@ -182,21 +194,22 @@ export default function Quiz({ currentCase, transcript, onPassed, onClose, userI
           </>
         )}
         <div className="quiz-actions">
-          <button className="quiz-btn" onClick={onClose}>Nächster Patient</button>
+          <button className="quiz-btn" onClick={onAdvance}>Weiter zur nächsten Stufe →</button>
+          <button className="quiz-btn ghost" onClick={onClose}>Diese Stufe wiederholen</button>
         </div>
       </div>
     );
   }
 
   const q = questions[idx];
-  const lives = MAX_WRONG - wrong.length;
 
   return (
     <div className="quiz-box">
       <div className="quiz-head">
         <span>Frage <b>{idx + 1}</b> von {questions.length}</span>
-        <span className="quiz-lives" title="Verbleibende Fehler">
-          {'●'.repeat(lives)}{'○'.repeat(MAX_WRONG - lives)}
+        <span className="quiz-tally" title="Bisheriges Ergebnis">
+          <span className="tally-ok">✓ {correctCount}</span>
+          <span className="tally-bad">✗ {wrong.length}</span>
         </span>
       </div>
 
