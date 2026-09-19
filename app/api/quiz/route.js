@@ -36,28 +36,28 @@ const FORMATS = [
   'Kommunikationsfrage: welche Formulierung ist gegenüber dem Patienten am besten geeignet'
 ];
 
-function buildSystem(){
+function buildSystem(count){
   return `Du bist Prüfer der Fachsprachprüfung (FSP) Zahnmedizin einer deutschen Landeszahnärztekammer.
 
 Du erstellst Prüfungsfragen im Multiple-Choice-Format. Diese Fragen entscheiden darüber, ob ein Kandidat eine Stufe aufsteigt — sie müssen daher fachlich korrekt, eindeutig und prüfungsrelevant sein.
 
 REGELN — strikt einhalten:
-1. Genau 20 Fragen.
+1. Genau ${count} Fragen.
 2. Jede Frage hat GENAU 4 Antwortmöglichkeiten, davon GENAU EINE eindeutig richtig.
 3. Die falschen Antworten müssen plausibel sein (typische Verwechslungen, häufige Anfängerfehler) — keine offensichtlich absurden Optionen.
 4. Die Fragen müssen sich auf DIESEN konkreten Fall beziehen, nicht auf allgemeines Lehrbuchwissen ohne Bezug.
 5. Stütze dich auf häufige, alltägliche Situationen aus der deutschen zahnärztlichen Praxis und auf die Themen, die in der FSP regelmäßig geprüft werden.
 6. Verteile die Fragen über die vorgegebenen Themenbereiche, mehrere Fragen pro Bereich sind erlaubt.
-7. "explanation" erklärt in 1-3 Sätzen, WARUM die richtige Antwort richtig ist UND worin der typische Denkfehler bei den falschen Antworten besteht. Der Kandidat liest das nach einem Fehler — es muss ihm beibringen, was er übersehen hat.
+7. "explanation" erklärt in 1-2 knappen Sätzen, WARUM die richtige Antwort richtig ist UND worin der typische Denkfehler bei den falschen Antworten besteht. Kurz und prägnant, keine langen Absätze.
 8. Alles auf Deutsch. Kein Markdown, keine Aufzählungszeichen, keine Nummerierung im Fragetext.
 9. Verrate in der Fragestellung nicht die Antwort einer anderen Frage.
-10. Variiere das FRAGEFORMAT über die 20 Fragen hinweg deutlich (siehe FRAGEFORMATE unten) — nicht alle Fragen dürfen gleich klingen wie "Was ist die wahrscheinlichste Diagnose?". Mische direkte Wissensfragen, Fallvignetten mit neuer Zusatzinformation, "Was tun Sie als Nächstes?"-Fragen, "Welche Aussage ist FALSCH?"-Fragen, Begriffszuordnungen und Kommunikationsfragen.
+10. Variiere das FRAGEFORMAT über die Fragen hinweg deutlich (siehe FRAGEFORMATE unten) — nicht alle Fragen dürfen gleich klingen wie "Was ist die wahrscheinlichste Diagnose?". Mische direkte Wissensfragen, Fallvignetten mit neuer Zusatzinformation, "Was tun Sie als Nächstes?"-Fragen, "Welche Aussage ist FALSCH?"-Fragen, Begriffszuordnungen und Kommunikationsfragen.
 
 FRAGEFORMATE (zur Inspiration, mische sie):
 ${FORMATS.map((f, i) => (i + 1) + '. ' + f).join('\n')}`;
 }
 
-function buildPrompt({ caseName, meta, diagnosis, difficulty, transcript }){
+function buildPrompt({ caseName, meta, diagnosis, difficulty, transcript }, topics, count){
   const level = {
     leicht: 'Einsteigerniveau: Grundlagen, klare Befunde, eindeutige Therapieentscheidungen.',
     mittel: 'Mittleres Niveau: mehrere Differentialdiagnosen, Begleitumstände beachten.',
@@ -73,10 +73,10 @@ Schwierigkeitsstufe: ${difficulty} — ${level}
 GESPRÄCHSVERLAUF (was der Kandidat tatsächlich erfragt hat):
 ${transcript || '(kein Gespräch protokolliert)'}
 
-THEMENBEREICHE, über die die 20 Fragen zu verteilen sind:
-${TOPICS.map((t, i) => (i + 1) + '. ' + t).join('\n')}
+THEMENBEREICHE, über die die ${count} Fragen zu verteilen sind:
+${topics.map((t, i) => (i + 1) + '. ' + t).join('\n')}
 
-Erstelle jetzt die 20 Prüfungsfragen zu diesem Fall.`;
+Erstelle jetzt die ${count} Prüfungsfragen zu diesem Fall.`;
 }
 
 const SCHEMA = {
@@ -146,30 +146,47 @@ export async function POST(req) {
     transcript: String(payload.transcript || '').slice(0, 12000)
   };
 
-  const body = {
-    contents: [{ role: 'user', parts: [{ text: buildPrompt(payload) }] }],
-    systemInstruction: { parts: [{ text: buildSystem() }] },
-    generationConfig: {
-      maxOutputTokens: 16000,
-      temperature: 1.0,          // har urinishda boshqa savollar chiqsin
-      responseMimeType: 'application/json',
-      responseSchema: SCHEMA
-    }
-  };
+  // 20 ta savolni bitta katta so'rovda so'rash 60 soniyalik funksiya vaqtiga
+  // yaqinlashib qolyapti (yangi model ko'proq token ishlatadi). Shuning uchun
+  // ikkita 10 talik so'rovga bo'lib, PARALLEL yuboramiz — umumiy vaqt bitta
+  // 10 talik so'rov vaqtiga yaqin bo'lib qoladi.
+  const half = Math.ceil(TOPICS.length / 2);
+  const topicHalves = [TOPICS.slice(0, half), TOPICS.slice(half)];
 
-  try {
-    const { data: data } = await callGemini(body, apiKey);
-    const text = data.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || '';
-    let parsed;
-    try { parsed = JSON.parse(text); }
-    catch (e) { return Response.json({ error: 'Die Antwort konnte nicht gelesen werden. Bitte erneut versuchen.' }, { status: 502 }); }
-
-    const questions = sanitize(parsed.questions).slice(0, 20);
-    if (questions.length < 10) {
-      return Response.json({ error: 'Es konnten nicht genug Fragen erstellt werden (' + questions.length + ')' }, { status: 502 });
-    }
-    return Response.json({ questions });
-  } catch (err) {
-    return Response.json({ error: geminiMessage(err) }, { status: err.status || 502 });
+  function makeBody(topics, count){
+    return {
+      contents: [{ role: 'user', parts: [{ text: buildPrompt(payload, topics, count) }] }],
+      systemInstruction: { parts: [{ text: buildSystem(count) }] },
+      generationConfig: {
+        maxOutputTokens: 8500,
+        temperature: 1.0,          // har urinishda boshqa savollar chiqsin
+        responseMimeType: 'application/json',
+        responseSchema: SCHEMA
+      }
+    };
   }
+
+  async function runBatch(topics, count){
+    const { data } = await callGemini(makeBody(topics, count), apiKey);
+    const text = data.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || '';
+    const parsed = JSON.parse(text);
+    return sanitize(parsed.questions);
+  }
+
+  const results = await Promise.allSettled([
+    runBatch(topicHalves[0], 10),
+    runBatch(topicHalves[1], 10)
+  ]);
+
+  const questions = results.flatMap(r => r.status === 'fulfilled' ? r.value : []).slice(0, 20);
+
+  if (questions.length < 10) {
+    const failed = results.find(r => r.status === 'rejected');
+    const err = failed?.reason;
+    return Response.json(
+      { error: err ? geminiMessage(err) : 'Es konnten nicht genug Fragen erstellt werden (' + questions.length + ')' },
+      { status: err?.status || 502 }
+    );
+  }
+  return Response.json({ questions });
 }
