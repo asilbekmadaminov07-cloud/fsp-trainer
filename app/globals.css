@@ -499,6 +499,33 @@ h1,h2,h3{font-family:var(--serif);letter-spacing:-.015em;line-height:1.18}
 .partner-chat-input{display:flex;gap:8px;padding:12px 14px;border-top:1px solid var(--line-soft);background:var(--surface-2)}
 .partner-chat-input input{flex:1;padding:11px 14px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--surface);font-size:15px}
 
+/* ---------- skeleton (yuklanish konturi) ---------- */
+.skel{
+  position:relative;overflow:hidden;background:var(--surface-3);
+  border:1px solid var(--line-soft);
+}
+.skel::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--surface) 70%,transparent),transparent);
+  animation:skelShimmer 1.4s ease-in-out infinite;
+}
+@keyframes skelShimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+.skel-hero{height:172px;border-radius:22px;margin-bottom:22px}
+@media(prefers-reduced-motion:reduce){.skel::after{animation:none}}
+
+/* ---------- tugma bosilish animatsiyasi (taktil javob) ---------- */
+.btn,.quiz-btn,.diff-btn,.tool-filters button,.logout-btn,.sensor-toggle,.quiz-opt,.next-case-btn,.voice-toggle{
+  transition:transform .15s var(--ease), box-shadow .2s var(--ease), border-color .2s, background .2s, filter .2s;
+}
+.btn:active,.quiz-btn:active:not(:disabled),.diff-btn:active,.tool-filters button:active,
+.next-case-btn:active:not(:disabled),.voice-toggle:active,.quiz-opt:active:not(:disabled){
+  transform:scale(.96);
+}
+
+/* ---------- raqam animatsiyasi urg'usi ---------- */
+.count-pop{display:inline-block;animation:countPop .35s var(--ease)}
+@keyframes countPop{0%{transform:scale(1.35);color:var(--gold)}100%{transform:scale(1)}}
+
 .two-col{display:grid;grid-template-columns:1fr;gap:16px}
 @media(min-width:860px){ .two-col{grid-template-columns:1fr 1fr} }
 

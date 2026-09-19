@@ -4,6 +4,7 @@ import ToolShell from '@/app/tools/ToolShell';
 import { apiPost } from '@/lib/api';
 import { buildFallbackPlan } from '@/lib/learning';
 import { supabase } from '@/lib/supabaseClient';
+import { friendlyError } from '@/lib/errors';
 
 export default function CoachPage() {
   const [plan, setPlan] = useState(null);
@@ -50,7 +51,7 @@ export default function CoachPage() {
             <a className="quiz-btn" href={'/daily?' + new URLSearchParams({ focus: plan.focusTopic })}>10-Minuten-Training starten</a>
           </section>
 
-          {error && <p className="coach-note">Der Offline-Plan wird angezeigt: {error}</p>}
+          {error && <p className="coach-note">Der Offline-Plan wird angezeigt: {friendlyError(error)}</p>}
           <div className="coach-grid">
             <section className="panel">
               <h3>Ihre drei Lernfelder</h3>

@@ -8,6 +8,8 @@ import Header from '@/app/components/Header';
 import TiltCard from '@/app/components/TiltCard';
 import ReferralCard from '@/app/components/ReferralCard';
 import PushOptIn from '@/app/components/PushOptIn';
+import { HomeSkeleton } from '@/app/components/Skeleton';
+import { useCountUp } from '@/lib/useCountUp';
 
 const ACHIEVEMENTS = [
   { id: 'first_case', title: 'Erste Diagnose bestanden', need: 1 },
@@ -100,7 +102,16 @@ export default function Home() {
     return () => { mounted = false; };
   }, [router]);
 
-  if (loading || !profile) return null;
+  const solvedDisplay = useCountUp(profile?.cases_solved || 0);
+
+  if (loading || !profile) {
+    return (
+      <>
+        <div className="topbar"><div className="topbar-inner"><span className="brand-mark">FSP<span style={{ color: 'var(--brand)' }}>.</span>Trainer</span></div></div>
+        <HomeSkeleton />
+      </>
+    );
+  }
 
   const xp = profile.xp || 0;
   const level = levelFromXp(xp);
@@ -123,7 +134,7 @@ export default function Home() {
           <div className="xp-track"><div className="xp-fill" style={{ width: Math.min(100, inLevel / 150 * 100) + '%' }} /></div>
           <div className="hero-meta">
             <span>{inLevel} / 150 Erfahrung bis Stufe {level + 1}</span>
-            <span>{solved} Fälle gelöst</span>
+            <span>{solvedDisplay} Fälle gelöst</span>
             <span>{practiceDays} Tage geübt</span>
             <span>Mitglied seit {memberDays} Tagen</span>
             {stage.next && <span>Nächster Rang: {stage.next.title}</span>}

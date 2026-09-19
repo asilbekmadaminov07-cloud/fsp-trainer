@@ -4,6 +4,9 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import ToolShell from '../ToolShell';
 import { awardProgress, newAttemptId } from '@/lib/progress';
+import { playCorrect, playWrong } from '@/lib/sound';
+import { burstConfetti } from '@/lib/confetti';
+import { friendlyError } from '@/lib/errors';
 
 const REWARD_PER_CORRECT = { xp: 8, coins: 4 };
 
@@ -50,6 +53,7 @@ export default function TestMode(){
     if (selected === null || revealed) return;
     const q = questions[idx];
     setRevealed(true);
+    if (selected === q.correct) playCorrect(); else playWrong();
     if (selected !== q.correct) {
       setWrong(w => [...w, {
         nr: idx + 1, q: q.q, chosen: q.options[selected], correct: q.options[q.correct], explanation: q.explanation, topic: q.topic
@@ -64,6 +68,7 @@ export default function TestMode(){
       if (userId && correctCount > 0) {
         await awardProgress('test:correct', attemptId, correctCount);
       }
+      if (correctCount === questions.length) burstConfetti();
       return;
     }
     setIdx(idx + 1); setSelected(null); setRevealed(false);
@@ -89,7 +94,7 @@ export default function TestMode(){
 
       {!loading && error && (
         <div className="quiz-box">
-          <p className="error-text">{error}</p>
+          <p className="error-text">{friendlyError(error)}</p>
           <div className="quiz-actions"><button className="quiz-btn" onClick={load}>Erneut versuchen</button></div>
         </div>
       )}

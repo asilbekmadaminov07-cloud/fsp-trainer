@@ -6,6 +6,9 @@ import { apiPost } from '@/lib/api';
 import { primaryFocus } from '@/lib/learning';
 import { supabase } from '@/lib/supabaseClient';
 import ShareButton from '@/app/components/ShareButton';
+import { playCorrect, playWrong, playLevelUp } from '@/lib/sound';
+import { burstConfetti } from '@/lib/confetti';
+import { friendlyError } from '@/lib/errors';
 
 function DailyTraining() {
   const params = useSearchParams();
@@ -52,7 +55,7 @@ function DailyTraining() {
 
   function confirm() {
     if (selected === null || revealed) return;
-    if (selected === questions[index].correct) setScore(value => value + 1);
+    if (selected === questions[index].correct) { setScore(value => value + 1); playCorrect(); } else { playWrong(); }
     setRevealed(true);
   }
 
@@ -67,7 +70,11 @@ function DailyTraining() {
       p_focus_topic: focus, p_score: finalScore
     });
     if (rpcError) setError('Fortschritt konnte nicht gespeichert werden. Bitte zuerst die neue Datenbank-Migration ausführen.');
-    else { setResult(data); setCompletedToday(true); }
+    else {
+      setResult(data); setCompletedToday(true);
+      burstConfetti();
+      if (data?.certificate_unlocked) playLevelUp(); else playCorrect();
+    }
   }
 
   return (
@@ -79,7 +86,7 @@ function DailyTraining() {
       </div>
 
       {loading && <div className="coach-loading">Die heutige persönliche Challenge wird erstellt…</div>}
-      {!loading && error && !questions && <div className="panel"><p className="error-text">{error}</p></div>}
+      {!loading && error && !questions && <div className="panel"><p className="error-text">{friendlyError(error)}</p></div>}
 
       {!loading && questions && !done && (() => {
         const q = questions[index];

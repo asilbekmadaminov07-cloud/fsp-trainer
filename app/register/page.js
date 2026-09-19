@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import TiltCard from '@/app/components/TiltCard';
 import { claimReferral } from '@/lib/referral';
 import { BUNDESLAENDER } from '@/lib/bundesland';
+import { friendlyError } from '@/lib/errors';
 
 const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
@@ -39,7 +40,7 @@ function RegisterForm() {
       options: SITE_KEY ? { captchaToken } : undefined
     });
     if (signUpError) {
-      setLoading(false); setError(signUpError.message);
+      setLoading(false); setError(friendlyError(signUpError.message));
       captchaRef.current?.reset?.();
       setCaptchaToken('');
       return;
@@ -53,7 +54,7 @@ function RegisterForm() {
         age: age ? parseInt(age, 10) : null,
         bundesland: bundesland || null
       });
-      if (profileError) { setLoading(false); setError('Das Konto wurde angelegt, aber das Profil konnte nicht gespeichert werden: ' + profileError.message); return; }
+      if (profileError) { setLoading(false); setError('Das Konto wurde angelegt, aber das Profil konnte nicht gespeichert werden. ' + friendlyError(profileError.message)); return; }
       if (refCode) claimReferral(refCode).then(() => {});
     }
 

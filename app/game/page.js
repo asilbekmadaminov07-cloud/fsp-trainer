@@ -7,7 +7,10 @@ import { CASES, DIFFS, DIFF_REWARDS, IMAGES, COMMON_PATIENT_INSTRUCTIONS } from 
 import { levelFromXp, careerStage } from '@/lib/career';
 import { touchPracticeDay } from '@/lib/practice';
 import { awardProgress, newAttemptId } from '@/lib/progress';
+import { playCorrect, playWrong } from '@/lib/sound';
+import { burstConfetti } from '@/lib/confetti';
 import Header from '@/app/components/Header';
+import { ToolSkeleton } from '@/app/components/Skeleton';
 import {
   speakNatural, stopSpeaking, pickVoice,
   unlockAudio, hasSpeechRecognition, hasRecorder, startRecording, transcribeAudio
@@ -406,6 +409,7 @@ export default function Game() {
 
       setEvalResult({ verdict, text: rest, reward });
       setEvalLoading(false);
+      if (verdict === 'richtig') { playCorrect(); burstConfetti(); } else if (verdict === 'falsch') { playWrong(); }
 
       if (activeRef.current) {
         const verdictLine = verdict === 'richtig' ? 'Ihre Diagnose ist richtig.'
@@ -475,7 +479,14 @@ export default function Game() {
     }
   }
 
-  if (loadingProfile || !profile) return null;
+  if (loadingProfile || !profile) {
+    return (
+      <>
+        <div className="topbar"><div className="topbar-inner"><span className="brand-mark">FSP<span style={{ color: 'var(--brand)' }}>.</span>Trainer</span></div></div>
+        <ToolSkeleton />
+      </>
+    );
+  }
 
   return (
     <>

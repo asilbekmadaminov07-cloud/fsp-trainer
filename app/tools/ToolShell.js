@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { touchPracticeDay } from '@/lib/practice';
 import Header from '@/app/components/Header';
+import { ToolSkeleton } from '@/app/components/Skeleton';
 
 // Barcha vositalar uchun umumiy ramka: tepa panel, sarlavha, orqaga havola.
 export default function ToolShell({ title, lead, children }) {
@@ -33,7 +34,14 @@ export default function ToolShell({ title, lead, children }) {
     return () => { alive = false; };
   }, [router]);
 
-  if (!ready) return null;
+  if (!ready) {
+    return (
+      <>
+        <div className="topbar"><div className="topbar-inner"><span className="brand-mark">FSP<span style={{ color: 'var(--brand)' }}>.</span>Trainer</span></div></div>
+        <ToolSkeleton />
+      </>
+    );
+  }
 
   return (
     <>

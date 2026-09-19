@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { daysSince } from '@/lib/practice';
+import { useCountUp } from '@/lib/useCountUp';
 import SensorToggle from '@/app/components/SensorToggle';
 
 // Barcha ichki sahifalar uchun umumiy tepa panel: hisob ma'lumotlari,
@@ -28,6 +29,8 @@ export default function Header({ profile, backHref }){
     router.replace('/');
   }
 
+  const coinsDisplay = useCountUp(profile?.coins ?? 0);
+
   if (!profile) return null;
   const initials = (profile.full_name || '?').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
   const memberDays = daysSince(profile.created_at);
@@ -41,7 +44,7 @@ export default function Header({ profile, backHref }){
           FSP<span style={{ color: 'var(--brand)' }}>.</span>Trainer
         </a>
         <div className="stats">
-          <span className="stat coins" title="Praxiskonto">💰 <b>{profile.coins ?? 0}</b></span>
+          <span className="stat coins" title="Praxiskonto">💰 <b>{coinsDisplay}</b></span>
           <span className="stat level" title="Stufe">⭐ <b>{profile.level ?? 1}</b></span>
           <span className="streak-badge" title="An diesen Tagen geübt">🔥 <b>{practiceDays}</b><span className="streak-word">Tage</span></span>
 

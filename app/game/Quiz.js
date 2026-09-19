@@ -3,6 +3,9 @@ import { apiRawPost, apiRawGet } from '@/lib/api';
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { newAttemptId } from '@/lib/progress';
+import { playCorrect, playWrong, playLevelUp } from '@/lib/sound';
+import { burstConfetti } from '@/lib/confetti';
+import { friendlyError } from '@/lib/errors';
 
 // 20 ta savolli imtihon.
 // Qoida: 3-xato — imtihon tugaydi va boshidan boshlanadi.
@@ -86,6 +89,11 @@ export default function Quiz({ currentCase, transcript, onPassed, onClose, userI
     if (selected === null || revealed) return;
     const q = questions[idx];
     setRevealed(true);
+    if (selected === q.correct) {
+      playCorrect();
+    } else {
+      playWrong();
+    }
     if (selected !== q.correct) {
       const next = [...wrong, {
         nr: idx + 1,
@@ -106,6 +114,8 @@ export default function Quiz({ currentCase, transcript, onPassed, onClose, userI
       setStatus('passed');
       const r = await onPassed(questions.length - wrong.length, questions.length, attemptIdRef.current);
       setAwarded(r || null);
+      if (r?.levelUp) playLevelUp(); else playCorrect();
+      burstConfetti();
       return;
     }
     setIdx(idx + 1);
@@ -128,7 +138,7 @@ export default function Quiz({ currentCase, transcript, onPassed, onClose, userI
     return (
       <div className="quiz-box">
         <div className="quiz-head"><b>Prüfung</b></div>
-        <p className="error-text">{error}</p>
+        <p className="error-text">{friendlyError(error)}</p>
         <div className="quiz-actions">
           <button className="quiz-btn" onClick={() => setAttempt(a => a + 1)}>Erneut versuchen</button>
           <button className="quiz-btn ghost" onClick={onClose}>Zurück zum Fall</button>
