@@ -8,11 +8,13 @@ import { burstConfetti } from '@/lib/confetti';
 import { friendlyError } from '@/lib/errors';
 import TiltCard from '@/app/components/TiltCard';
 
-// 20 ta savolli imtihon. Barcha 20 ta savol oxirigacha davom etadi — erta
+// 20 ta savolli imtihon. Barcha savollar oxirigacha davom etadi — erta
 // to'xtamaydi. Oxirida umumiy ball va natija (o'tdi/o'tmadi) ko'rsatiladi.
-// O'tish uchun kamida 18/20 kerak.
-const TOTAL = 20;
-const PASS_THRESHOLD = 18;
+// O'tish uchun kamida 90% (20 tadan 18 ta) to'g'ri kerak. Server ba'zan
+// (kamdan-kam, ikkita paralel so'rovdan biri muvaffaqiyatsiz bo'lsa) 20 tadan
+// kamroq savol qaytarishi mumkin — shu sabab chegara doim savollar soniga
+// NISBATAN hisoblanadi, qattiq "18" emas.
+const PASS_RATIO = 0.9;
 
 export default function Quiz({ currentCase, transcript, onPassed, onClose, onAdvance, userId }) {
   const [questions, setQuestions] = useState(null);
@@ -111,7 +113,8 @@ export default function Quiz({ currentCase, transcript, onPassed, onClose, onAdv
   }
 
   async function finish(){
-    const passed = correctCount >= PASS_THRESHOLD;
+    const passThreshold = Math.ceil(questions.length * PASS_RATIO);
+    const passed = correctCount >= passThreshold;
     if (passed) {
       setStatus('passed');
       const kind = correctCount === questions.length ? 'perfect' : 'pass';
@@ -161,11 +164,12 @@ export default function Quiz({ currentCase, transcript, onPassed, onClose, onAdv
 
   if (status === 'failed') {
     const score = correctCount;
+    const passThreshold = Math.ceil(questions.length * PASS_RATIO);
     return (
       <div className="quiz-box">
         <TiltCard className="quiz-verdict failed" maxDeg={5}>Nicht bestanden — {score} von {questions.length}</TiltCard>
         <p className="quiz-note">
-          Für den Aufstieg sind mindestens {PASS_THRESHOLD} von {questions.length} richtigen Antworten nötig.
+          Für den Aufstieg sind mindestens {passThreshold} von {questions.length} richtigen Antworten nötig.
           Lesen Sie zuerst, was schiefgelaufen ist:
         </p>
         <MistakeList wrong={wrong} />
