@@ -4,6 +4,13 @@
 
 alter table public.profiles add column if not exists avatar_url text;
 
+-- Profillarga hozirgacha faqat server-side (security definer) funksiyalar orqali
+-- yozilgan, shuning uchun jadvalda umuman UPDATE grant'i yo'q edi — RLS siyosati
+-- qatorlarni cheklaydi, lekin grant bo'lmasa Postgres so'rovni butunlay rad etadi.
+-- Faqat avatar_url ustuniga cheklab beramiz — boshqa maydonlar (coins, xp, level)
+-- hamon faqat award_progress kabi ishonchli funksiyalar orqaligina o'zgaradi.
+grant update (avatar_url) on public.profiles to authenticated;
+
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('avatars', 'avatars', true, 2097152, array['image/jpeg', 'image/png', 'image/webp'])
 on conflict (id) do update set

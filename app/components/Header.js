@@ -52,13 +52,13 @@ export default function Header({ profile, backHref }){
     setUploading(true);
     const path = `${profile.id}/avatar.${ext}`;
     const { error: upErr } = await supabase.storage.from('avatars').upload(path, file, { upsert: true, cacheControl: '3600' });
-    if (upErr) { setAvatarError('DEBUG upload: ' + upErr.message); setUploading(false); return; }
+    if (upErr) { setAvatarError('Hochladen fehlgeschlagen. Bitte erneut versuchen.'); setUploading(false); return; }
 
     const { data: pub } = supabase.storage.from('avatars').getPublicUrl(path);
     const url = pub.publicUrl + '?t=' + Date.now();
     const { error: dbErr } = await supabase.from('profiles').update({ avatar_url: url }).eq('id', profile.id);
     setUploading(false);
-    if (dbErr) { setAvatarError('DEBUG db: ' + dbErr.message + ' code=' + dbErr.code); return; }
+    if (dbErr) { setAvatarError('Speichern fehlgeschlagen. Bitte erneut versuchen.'); return; }
     setAvatarUrl(url);
   }
 
