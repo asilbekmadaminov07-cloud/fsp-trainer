@@ -461,7 +461,9 @@ export default function Game() {
           diagnosisAttemptRef.current
         );
         if (updated) setProfile(updated);
-        reward = r;
+        // Faqat server mukofotni haqiqatan saqlaganda ko'rsatamiz — aks holda
+        // foydalanuvchiga yolg'on "+coins" ko'rsatib qo'yamiz.
+        reward = updated ? r : null;
       }
 
       setEvalResult({ verdict, text: rest, reward });
@@ -492,8 +494,9 @@ export default function Game() {
     const oldLevel = levelFromXp(prof.xp || 0);
     const kind = score === total ? 'perfect' : 'pass';
     const updated = await awardProgress(`quiz:${diff}:${kind}`, attemptId);
-    if (updated) setProfile(updated);
-    const newLevel = levelFromXp(updated?.xp || prof.xp || 0);
+    if (!updated) return null; // server mukofotni saqlay olmadi — yolg'on "+coins" ko'rsatmaymiz
+    setProfile(updated);
+    const newLevel = levelFromXp(updated.xp || prof.xp || 0);
     return { xp, coins, levelUp: newLevel > oldLevel, title: careerStage(newLevel).title };
   }
 

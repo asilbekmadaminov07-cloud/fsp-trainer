@@ -4,9 +4,8 @@
 import { createClient } from '@supabase/supabase-js';
 
 // MUHIM: `revalidate` export QILMAYMIZ — u bu route'ni statik (ISR) qilib
-// qo'yadi, build paytidagi bitta natijani "qotirib" qo'yishi mumkin (bu aynan
-// sodir bo'lgan edi: 0/0 natija keshlanib qolgan). Har so'rovda haqiqiy sonni
-// olish uchun route dinamik bo'lishi kerak.
+// qo'yadi, build paytidagi bitta natijani "qotirib" qo'yishi mumkin. Har
+// so'rovda haqiqiy sonni olish uchun route dinamik bo'lishi kerak.
 export const dynamic = 'force-dynamic';
 
 export async function GET(){
@@ -16,20 +15,21 @@ export async function GET(){
     return Response.json({ sessions: 0, users: 0 });
   }
 
-  // DEBUG: hech qaysi belgini oshkor qilmasdan, faqat lotin-1 doirasidan
-  // tashqaridagi belgi bormi va u qayerdaligini tekshiramiz (muhit
-  // o'zgaruvchisi noto'g'ri nusxalangan bo'lishi mumkin — masalan "aqlli
-  // tirnoq" belgisi bilan).
-  function findBad(s, label){
-    for (let i = 0; i < s.length; i++) {
-      if (s.charCodeAt(i) > 255) return { label, index: i, code: s.charCodeAt(i), len: s.length };
-    }
-    return null;
-  }
-  const bad = findBad(url, 'url') || findBad(serviceKey, 'serviceKey');
+  try {
+    const admin = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
 
-  return Response.json(
-    { sessions: 0, users: 0, DEBUG_bad: bad, DEBUG_urlLen: url.length, DEBUG_keyLen: serviceKey.length },
-    { headers: { 'Cache-Control': 'no-store' } }
-  );
+    const [{ count: sessions }, { count: users }] = await Promise.all([
+      admin.from('reward_ledger').select('id', { count: 'exact', head: true }),
+      admin.from('profiles').select('id', { count: 'exact', head: true })
+    ]);
+
+    return Response.json(
+      { sessions: sessions || 0, users: users || 0 },
+      { headers: { 'Cache-Control': 's-maxage=300, stale-while-revalidate=600' } }
+    );
+  } catch (e) {
+    // Statistika ikkilamchi (dekorativ) narsa — agar ishlamasa, sahifa
+    // baribir buzilmasligi kerak, shunchaki statistika satri ko'rinmaydi.
+    return Response.json({ sessions: 0, users: 0 });
+  }
 }
