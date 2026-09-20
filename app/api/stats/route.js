@@ -18,13 +18,17 @@ export async function GET(){
 
   const admin = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
 
-  const [{ count: sessions }, { count: users }] = await Promise.all([
+  const [rSessions, rUsers] = await Promise.all([
     admin.from('reward_ledger').select('id', { count: 'exact', head: true }),
     admin.from('profiles').select('id', { count: 'exact', head: true })
   ]);
 
   return Response.json(
-    { sessions: sessions || 0, users: users || 0 },
-    { headers: { 'Cache-Control': 's-maxage=300, stale-while-revalidate=600' } }
+    {
+      sessions: rSessions.count || 0, users: rUsers.count || 0,
+      DEBUG_sessionsErr: rSessions.error?.message || null, DEBUG_usersErr: rUsers.error?.message || null,
+      DEBUG_hasUrl: !!url, DEBUG_hasKey: !!serviceKey
+    },
+    { headers: { 'Cache-Control': 'no-store' } }
   );
 }
