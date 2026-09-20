@@ -16,19 +16,20 @@ export async function GET(){
     return Response.json({ sessions: 0, users: 0 });
   }
 
-  const admin = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
-
-  const [rSessions, rUsers] = await Promise.all([
-    admin.from('reward_ledger').select('id', { count: 'exact', head: true }),
-    admin.from('profiles').select('id', { count: 'exact', head: true })
-  ]);
+  // DEBUG: hech qaysi belgini oshkor qilmasdan, faqat lotin-1 doirasidan
+  // tashqaridagi belgi bormi va u qayerdaligini tekshiramiz (muhit
+  // o'zgaruvchisi noto'g'ri nusxalangan bo'lishi mumkin — masalan "aqlli
+  // tirnoq" belgisi bilan).
+  function findBad(s, label){
+    for (let i = 0; i < s.length; i++) {
+      if (s.charCodeAt(i) > 255) return { label, index: i, code: s.charCodeAt(i), len: s.length };
+    }
+    return null;
+  }
+  const bad = findBad(url, 'url') || findBad(serviceKey, 'serviceKey');
 
   return Response.json(
-    {
-      sessions: rSessions.count || 0, users: rUsers.count || 0,
-      DEBUG_sessionsErr: rSessions.error?.message || null, DEBUG_usersErr: rUsers.error?.message || null,
-      DEBUG_hasUrl: !!url, DEBUG_hasKey: !!serviceKey
-    },
+    { sessions: 0, users: 0, DEBUG_bad: bad, DEBUG_urlLen: url.length, DEBUG_keyLen: serviceKey.length },
     { headers: { 'Cache-Control': 'no-store' } }
   );
 }
