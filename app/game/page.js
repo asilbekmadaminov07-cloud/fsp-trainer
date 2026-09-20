@@ -192,10 +192,13 @@ export default function Game() {
   }, [router]);
 
   useEffect(() => {
-    // Yangi darajaga o'tilganda (va sahifa birinchi ochilganda) bemor tasodifiy tanlanadi
+    // Yangi darajaga o'tilganda (va sahifa birinchi ochilganda) bemor tasodifiy tanlanadi.
+    // `lang` ham qaramlik ro'yxatida — chunki sahifa ochilganda til hali
+    // localStorage'dan aniqlanmagan bo'lishi mumkin (standart holat 'de'), til
+    // aniqlanib o'zgargach, holat shu yangi tilda qaytadan yuklanadi.
     resetCase(pickRandomIdx(currentDiff, -1));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentDiff]);
+  }, [currentDiff, lang]);
 
   useEffect(() => {
     if (bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight;
