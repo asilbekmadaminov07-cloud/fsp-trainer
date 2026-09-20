@@ -34,7 +34,11 @@ export async function POST(req) {
     contents,
     generationConfig: {
       maxOutputTokens: Math.max(50, Math.min(Number(maxTokens) || 300, 1600)),
-      temperature: 0.8
+      temperature: 0.8,
+      // Fikrlash (thinking) tokenlari o'chirilgan: aks holda ular maxOutputTokens
+      // byudjetining katta qismini "ko'zga ko'rinmas" fikrlashga sarflab, ko'rinadigan
+      // javobni yarim jumlada kesib qo'yishi mumkin (masalan tashxis bahosida ko'rilgan).
+      thinkingConfig: { thinkingBudget: 0 }
     }
   };
   if (system) body.systemInstruction = { parts: [{ text: system }] };
