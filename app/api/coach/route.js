@@ -1,6 +1,7 @@
 import { guard } from '@/lib/apiGuard';
 import { callGemini, geminiMessage } from '@/lib/gemini';
 import { buildFallbackPlan } from '@/lib/learning';
+import { safeLang, langInstruction } from '@/lib/langPrompt';
 
 export const maxDuration = 60;
 
@@ -50,6 +51,7 @@ export async function POST(req) {
   const payload = await req.json().catch(() => ({}));
   const mistakes = cleanMistakes(payload.mistakes);
   const bundesland = typeof payload.bundesland === 'string' ? payload.bundesland.slice(0, 60) : '';
+  const lang = safeLang(payload.lang);
   const fallback = buildFallbackPlan(mistakes);
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return Response.json({ plan: fallback, generatedBy: 'local' });
@@ -60,7 +62,7 @@ export async function POST(req) {
 
   const body = {
     contents: [{ role: 'user', parts: [{ text: JSON.stringify(mistakes) }] }],
-    systemInstruction: { parts: [{ text: `Du bist ein persönlicher FSP-Lerncoach für Zahnmedizin. Analysiere die Fehlerliste und erstelle einen realistischen 7-Tage-Plan. Jeder Tag dauert genau 10 Minuten. Priorisiere wiederkehrende Denkfehler, nicht bloß einzelne Fragen. Schreibe klares Deutsch, motivierend aber konkret. Gib genau 3 Schwachpunkte und genau 7 Tage zurück. Keine erfundenen Leistungen.${stateNote}` }] },
+    systemInstruction: { parts: [{ text: `Du bist ein persönlicher FSP-Lerncoach für Zahnmedizin. Analysiere die Fehlerliste und erstelle einen realistischen 7-Tage-Plan. Jeder Tag dauert genau 10 Minuten. Priorisiere wiederkehrende Denkfehler, nicht bloß einzelne Fragen. ${langInstruction(lang)} Motivierend aber konkret. Gib genau 3 Schwachpunkte und genau 7 Tage zurück. Keine erfundenen Leistungen.${stateNote}` }] },
     generationConfig: {
       maxOutputTokens: 3000,
       temperature: 0.45,

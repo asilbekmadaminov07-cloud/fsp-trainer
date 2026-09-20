@@ -7,6 +7,7 @@ import { playCorrect, playWrong, playLevelUp } from '@/lib/sound';
 import { burstConfetti } from '@/lib/confetti';
 import { friendlyError } from '@/lib/errors';
 import TiltCard from '@/app/components/TiltCard';
+import { useLang } from '@/lib/LanguageContext';
 
 // 20 ta savolli imtihon. Barcha savollar oxirigacha davom etadi — erta
 // to'xtamaydi. Oxirida umumiy ball va natija (o'tdi/o'tmadi) ko'rsatiladi.
@@ -17,6 +18,7 @@ import TiltCard from '@/app/components/TiltCard';
 const PASS_RATIO = 0.9;
 
 export default function Quiz({ currentCase, transcript, onPassed, onClose, onAdvance, userId }) {
+  const { t, lang } = useLang();
   const [questions, setQuestions] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -43,11 +45,12 @@ export default function Quiz({ currentCase, transcript, onPassed, onClose, onAdv
         meta: currentCase.meta,
         diagnosis: currentCase.diagnosis,
         difficulty: currentCase.difficulty,
-        transcript
+        transcript,
+        lang
       });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) {
-        const err = new Error(d.error || 'Fragen konnten nicht geladen werden');
+        const err = new Error(d.error || t('connectionError'));
         err.status = r.status;
         throw err;
       }
@@ -162,8 +165,8 @@ export default function Quiz({ currentCase, transcript, onPassed, onClose, onAdv
     return (
       <div className="quiz-box">
         <div className="quiz-loading">
-          Die Prüfungsfragen werden für diesen Fall erstellt…
-          <span className="quiz-sub">Das kann bis zu 30 Sekunden dauern — sie werden jedes Mal neu generiert.</span>
+          {t('quizCreating')}
+          <span className="quiz-sub">{t('quizCreatingSub')}</span>
         </div>
       </div>
     );
@@ -172,11 +175,11 @@ export default function Quiz({ currentCase, transcript, onPassed, onClose, onAdv
   if (error) {
     return (
       <div className="quiz-box">
-        <div className="quiz-head"><b>Prüfung</b></div>
+        <div className="quiz-head"><b>{t('exam')}</b></div>
         <p className="error-text">{friendlyError(error)}</p>
         <div className="quiz-actions">
-          <button className="quiz-btn" onClick={() => setAttempt(a => a + 1)}>Erneut versuchen</button>
-          <button className="quiz-btn ghost" onClick={onClose}>Zurück zum Fall</button>
+          <button className="quiz-btn" onClick={() => setAttempt(a => a + 1)}>{t('retry')}</button>
+          <button className="quiz-btn ghost" onClick={onClose}>{t('backToCase')}</button>
         </div>
       </div>
     );
@@ -187,15 +190,14 @@ export default function Quiz({ currentCase, transcript, onPassed, onClose, onAdv
     const passThreshold = Math.ceil(questions.length * PASS_RATIO);
     return (
       <div className="quiz-box">
-        <TiltCard className="quiz-verdict failed" maxDeg={5}>Nicht bestanden — {score} von {questions.length}</TiltCard>
+        <TiltCard className="quiz-verdict failed" maxDeg={5}>{t('notPassed')} — {score} {t('of')} {questions.length}</TiltCard>
         <p className="quiz-note">
-          Für den Aufstieg sind mindestens {passThreshold} von {questions.length} richtigen Antworten nötig.
-          Lesen Sie zuerst, was schiefgelaufen ist:
+          {t('passNote').replace('{n}', passThreshold).replace('{t}', questions.length)}
         </p>
-        <MistakeList wrong={wrong} />
+        <MistakeList wrong={wrong} t={t} />
         <div className="quiz-actions">
-          <button className="quiz-btn" onClick={restart}>Von vorne beginnen</button>
-          <button className="quiz-btn ghost" onClick={onClose}>Zurück zum Fall</button>
+          <button className="quiz-btn" onClick={restart}>{t('restart')}</button>
+          <button className="quiz-btn ghost" onClick={onClose}>{t('backToCase')}</button>
         </div>
       </div>
     );
@@ -205,22 +207,22 @@ export default function Quiz({ currentCase, transcript, onPassed, onClose, onAdv
     const score = correctCount;
     return (
       <div className="quiz-box">
-        <TiltCard className="quiz-verdict passed" maxDeg={5}>Bestanden — {score} von {questions.length}</TiltCard>
+        <TiltCard className="quiz-verdict passed" maxDeg={5}>{t('passed')} — {score} {t('of')} {questions.length}</TiltCard>
         {awarded && (
           <div className="reward-toast">
-            +{awarded.coins} zum Praxiskonto · +{awarded.xp} Erfahrung
-            {awarded.levelUp && <> · <b>Aufstieg: {awarded.title}</b></>}
+            +{awarded.coins} {t('toAccount')} · +{awarded.xp} {t('xpUnit')}
+            {awarded.levelUp && <> · <b>{t('levelUp')}: {awarded.title}</b></>}
           </div>
         )}
         {wrong.length > 0 && (
           <>
-            <p className="quiz-note">Diese Punkte sollten Sie sich trotzdem ansehen:</p>
-            <MistakeList wrong={wrong} />
+            <p className="quiz-note">{t('reviewMistakes')}</p>
+            <MistakeList wrong={wrong} t={t} />
           </>
         )}
         <div className="quiz-actions">
-          <button className="quiz-btn" onClick={onAdvance}>Weiter zur nächsten Stufe →</button>
-          <button className="quiz-btn ghost" onClick={onClose}>Diese Stufe wiederholen</button>
+          <button className="quiz-btn" onClick={onAdvance}>{t('nextStage')}</button>
+          <button className="quiz-btn ghost" onClick={onClose}>{t('repeatStage')}</button>
         </div>
       </div>
     );
@@ -231,7 +233,7 @@ export default function Quiz({ currentCase, transcript, onPassed, onClose, onAdv
   return (
     <div className="quiz-box">
       <div className="quiz-head">
-        <span>Frage <b>{idx + 1}</b> von {questions.length}</span>
+        <span>{t('question')} <b>{idx + 1}</b> {t('of')} {questions.length}</span>
         <span className="quiz-tally" title="Bisheriges Ergebnis">
           <span className="tally-ok">✓ {correctCount}</span>
           <span className="tally-bad">✗ {wrong.length}</span>
@@ -260,38 +262,38 @@ export default function Quiz({ currentCase, transcript, onPassed, onClose, onAdv
 
       {revealed && (
         <div className={'quiz-feedback ' + (selected === q.correct ? 'ok' : 'bad')}>
-          <b>{selected === q.correct ? 'Richtig.' : 'Falsch.'}</b> {q.explanation}
+          <b>{selected === q.correct ? t('correct') : t('incorrect')}</b> {q.explanation}
         </div>
       )}
 
       <div className="quiz-actions">
         {!revealed
-          ? <button className="quiz-btn" onClick={confirm} disabled={selected === null}>Antwort bestätigen</button>
+          ? <button className="quiz-btn" onClick={confirm} disabled={selected === null}>{t('confirmAnswer')}</button>
           : <button className="quiz-btn" onClick={next}>
-              {idx + 1 >= questions.length ? 'Prüfung abschließen' : 'Weiter'}
+              {idx + 1 >= questions.length ? t('finishExam') : t('next')}
             </button>}
-        <button className="quiz-btn ghost" onClick={onClose}>Abbrechen</button>
+        <button className="quiz-btn ghost" onClick={onClose}>{t('cancel')}</button>
       </div>
     </div>
   );
 }
 
-function MistakeList({ wrong }) {
+function MistakeList({ wrong, t }) {
   return (
     <div className="quiz-mistakes">
       {wrong.map((w, i) => (
         <div className="quiz-mistake" key={i}>
-          <div className="qm-nr">Frage {w.nr}</div>
+          <div className="qm-nr">{t('question')} {w.nr}</div>
           <div className="qm-q">{w.q}</div>
-          <div className="qm-line bad">Ihre Antwort: {w.chosen}</div>
-          <div className="qm-line good">Richtig wäre: {w.correct}</div>
+          <div className="qm-line bad">{t('yourAnswer')} {w.chosen}</div>
+          <div className="qm-line good">{t('correctWouldBe')} {w.correct}</div>
           <div className="qm-exp">{w.explanation}</div>
           <a
             className="quiz-btn ghost"
             style={{ marginTop: 10, display: 'inline-flex' }}
             href={'/lernen?' + new URLSearchParams({ thema: w.topic || '', frage: w.q, falsch: w.chosen, richtig: w.correct }).toString()}
           >
-            Thema vertiefen →
+            {t('deepenTopic')}
           </a>
         </div>
       ))}

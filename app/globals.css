@@ -640,6 +640,7 @@ h1,h2,h3{font-family:var(--serif);letter-spacing:-.015em;line-height:1.18}
   animation:dropIn .18s var(--ease) both;
 }
 @keyframes dropIn{from{opacity:0;transform:translateY(-6px) scale(.97)}to{opacity:1;transform:none}}
+.lang-select-sm{border:1px solid var(--line);background:var(--surface-3);border-radius:999px;padding:4px 10px;font-size:12px;font-weight:600;color:var(--ink);cursor:pointer}
 .acct-dropdown .row-item{margin-bottom:7px}
 .acct-dropdown .row-item:last-child{margin-bottom:0}
 .streak-badge{

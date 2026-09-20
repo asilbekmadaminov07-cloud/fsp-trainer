@@ -7,6 +7,8 @@ import { useCountUp } from '@/lib/useCountUp';
 import SensorToggle from '@/app/components/SensorToggle';
 import BottomNav from '@/app/components/BottomNav';
 import { IconCoin, IconStar, IconFire, IconCamera } from '@/app/components/Icons';
+import { useLang } from '@/lib/LanguageContext';
+import { LANGS } from '@/lib/i18n';
 
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
 const ALLOWED_AVATAR_TYPES = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
@@ -22,6 +24,7 @@ export default function Header({ profile, backHref }){
   const [avatarError, setAvatarError] = useState('');
   const boxRef = useRef(null);
   const fileInputRef = useRef(null);
+  const { t, lang, setLang } = useLang();
 
   useEffect(() => { setAvatarUrl(profile?.avatar_url || ''); }, [profile?.avatar_url]);
 
@@ -79,12 +82,12 @@ export default function Header({ profile, backHref }){
           FSP<span style={{ color: 'var(--brand)' }}>.</span>Trainer
         </a>
         <div className="stats">
-          <span className="stat coins" title="Praxiskonto"><IconCoin width={15} height={15} /> <b>{coinsDisplay}</b></span>
-          <span className="stat level" title="Stufe"><IconStar width={15} height={15} /> <b>{profile.level ?? 1}</b></span>
-          <span className="streak-badge" title="An diesen Tagen geübt"><IconFire width={15} height={15} /> <b>{practiceDays}</b><span className="streak-word">Tage</span></span>
+          <span className="stat coins" title={t('practiceAccount')}><IconCoin width={15} height={15} /> <b>{coinsDisplay}</b></span>
+          <span className="stat level" title={t('level')}><IconStar width={15} height={15} /> <b>{profile.level ?? 1}</b></span>
+          <span className="streak-badge" title={t('practicedDaysTitle')}><IconFire width={15} height={15} /> <b>{practiceDays}</b><span className="streak-word">{t('daysUnit')}</span></span>
 
           <div className="acct" ref={boxRef}>
-            <button className="acct-menu-btn" onClick={() => setOpen(o => !o)} aria-label="Konto">
+            <button className="acct-menu-btn" onClick={() => setOpen(o => !o)} aria-label={t('account')}>
               <div className={'acct-ring' + (practicedToday ? ' ring-active' : '')}>
                 <div className="acct-avatar">
                   {avatarUrl ? <img src={avatarUrl} alt="" /> : initials}
@@ -109,7 +112,7 @@ export default function Header({ profile, backHref }){
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploading}
                   >
-                    <IconCamera width={14} height={14} /> Profilbild ändern
+                    <IconCamera width={14} height={14} /> {t('changeAvatar')}
                   </button>
                   <input
                     ref={fileInputRef}
@@ -120,16 +123,22 @@ export default function Header({ profile, backHref }){
                   />
                   {avatarError && <span className="error-text" style={{ marginTop: 4 }}>{avatarError}</span>}
                 </div>
-                <div className="row-item"><span>Angemeldet als</span><b style={{ maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{email}</b></div>
-                <div className="row-item"><span>Mitglied seit</span><b>{memberDays} Tage</b></div>
-                <div className="row-item"><span>Geübt an</span><b>{practiceDays} Tagen</b></div>
-                {profile.bundesland && <div className="row-item"><span>Ziel-Bundesland</span><b>{profile.bundesland}</b></div>}
-                <a href="/mistakes" className="row-item" style={{ cursor: 'pointer' }}><span>Meine Fehler</span><b>→</b></a>
-                <a href="/daily" className="row-item" style={{ cursor: 'pointer' }}><span>10-Minuten-Training</span><b>→</b></a>
-                <a href="/coach" className="row-item" style={{ cursor: 'pointer' }}><span>AI-Lerncoach</span><b>→</b></a>
-                <a href="/home" className="row-item" style={{ cursor: 'pointer' }}><span>Dashboard</span><b>→</b></a>
+                <div className="row-item">
+                  <span>🌐 Sprache / Til / Язык</span>
+                  <select className="lang-select-sm" value={lang} onChange={e => setLang(e.target.value)}>
+                    {LANGS.map(l => <option key={l.code} value={l.code}>{l.label}</option>)}
+                  </select>
+                </div>
+                <div className="row-item"><span>{t('loggedInAs')}</span><b style={{ maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{email}</b></div>
+                <div className="row-item"><span>{t('memberSince')}</span><b>{memberDays} {t('daysUnit')}</b></div>
+                <div className="row-item"><span>{t('practicedOn')}</span><b>{practiceDays} {t('daysUnit2')}</b></div>
+                {profile.bundesland && <div className="row-item"><span>{t('targetState')}</span><b>{profile.bundesland}</b></div>}
+                <a href="/mistakes" className="row-item" style={{ cursor: 'pointer' }}><span>{t('myMistakes')}</span><b>→</b></a>
+                <a href="/daily" className="row-item" style={{ cursor: 'pointer' }}><span>{t('dailyTraining')}</span><b>→</b></a>
+                <a href="/coach" className="row-item" style={{ cursor: 'pointer' }}><span>{t('aiCoach')}</span><b>→</b></a>
+                <a href="/home" className="row-item" style={{ cursor: 'pointer' }}><span>{t('dashboard')}</span><b>→</b></a>
                 <div style={{ marginTop: 10 }}><SensorToggle /></div>
-                <button className="logout-btn" style={{ width: '100%', marginTop: 8 }} onClick={handleLogout}>Abmelden</button>
+                <button className="logout-btn" style={{ width: '100%', marginTop: 8 }} onClick={handleLogout}>{t('logout')}</button>
               </div>
             )}
           </div>

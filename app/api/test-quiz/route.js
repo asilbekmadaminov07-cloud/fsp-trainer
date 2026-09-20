@@ -4,6 +4,7 @@
 
 import { callGemini, geminiMessage } from '@/lib/gemini';
 import { guard } from '@/lib/apiGuard';
+import { safeLang, langInstruction } from '@/lib/langPrompt';
 
 export const maxDuration = 60;
 
@@ -32,7 +33,7 @@ const FORMATS = [
   'Kommunikationsfrage: beste Formulierung gegenüber dem Patienten'
 ];
 
-function buildSystem(topics){
+function buildSystem(topics, lang){
   return `Du bist Prüfer der Fachsprachprüfung (FSP) Zahnmedizin einer deutschen Landeszahnärztekammer.
 
 Erstelle einen kurzen Übungstest mit Multiple-Choice-Fragen, NICHT an einen bestimmten Patientenfall gebunden — allgemeines FSP-relevantes Wissen.
@@ -43,7 +44,7 @@ REGELN:
 3. Falsche Antworten müssen plausibel sein (typische Verwechslungen), nicht absurd.
 4. Verteile die Fragen über diese Themen: ${topics.join(' · ')}.
 5. "explanation" erklärt in 1-2 Sätzen, warum die richtige Antwort stimmt.
-6. Alles auf Deutsch, kein Markdown, keine Nummerierung im Fragetext.
+6. ${langInstruction(lang)} Kein Markdown, keine Nummerierung im Fragetext.
 7. Jede Frage muss anders formuliert sein als eine typische Lehrbuchfrage — variiere Formulierung und Reihenfolge der Optionen.
 8. Mische die Fragetypen deutlich über die 10 Fragen hinweg, zum Beispiel: ${FORMATS.join(' · ')}. Nicht mehr als 2-3 Fragen im selben Format hintereinander.`;
 }
@@ -104,10 +105,13 @@ export async function POST(req) {
     return Response.json({ error: 'Der KI-Dienst ist nicht konfiguriert.' }, { status: 500 });
   }
 
+  let lang = 'de';
+  try { const p = await req.json(); lang = safeLang(p?.lang); } catch (e) { /* eski so'rovlarda tana bo'lmasligi mumkin */ }
+
   const topics = pickTopics();
   const body = {
     contents: [{ role: 'user', parts: [{ text: 'Erstelle jetzt die 10 Testfragen.' }] }],
-    systemInstruction: { parts: [{ text: buildSystem(topics) }] },
+    systemInstruction: { parts: [{ text: buildSystem(topics, lang) }] },
     generationConfig: {
       maxOutputTokens: 8000,
       temperature: 1.05,

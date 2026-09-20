@@ -1,4 +1,5 @@
 import './globals.css';
+import { LanguageProvider } from '@/lib/LanguageContext';
 
 export const metadata = {
   title: 'FSP Trainer',
@@ -11,7 +12,9 @@ export default function RootLayout({ children }) {
       <body>
         <div className="orbs" aria-hidden="true">
           <span className="orb a" /><span className="orb b" /><span className="orb c" />
-        </div>{children}</body>
+        </div>
+        <LanguageProvider>{children}</LanguageProvider>
+      </body>
     </html>
   );
 }

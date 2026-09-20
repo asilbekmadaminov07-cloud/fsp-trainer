@@ -7,6 +7,7 @@
 
 import { callGemini, geminiMessage } from '@/lib/gemini';
 import { guard } from '@/lib/apiGuard';
+import { safeLang, langInstruction } from '@/lib/langPrompt';
 
 export const maxDuration = 60;
 
@@ -36,7 +37,7 @@ const FORMATS = [
   'Kommunikationsfrage: welche Formulierung ist gegenüber dem Patienten am besten geeignet'
 ];
 
-function buildSystem(count){
+function buildSystem(count, lang){
   return `Du bist Prüfer der Fachsprachprüfung (FSP) Zahnmedizin einer deutschen Landeszahnärztekammer.
 
 Du erstellst Prüfungsfragen im Multiple-Choice-Format. Diese Fragen entscheiden darüber, ob ein Kandidat eine Stufe aufsteigt — sie müssen daher fachlich korrekt, eindeutig und prüfungsrelevant sein.
@@ -49,7 +50,7 @@ REGELN — strikt einhalten:
 5. Stütze dich auf häufige, alltägliche Situationen aus der deutschen zahnärztlichen Praxis und auf die Themen, die in der FSP regelmäßig geprüft werden.
 6. Verteile die Fragen über die vorgegebenen Themenbereiche, mehrere Fragen pro Bereich sind erlaubt.
 7. "explanation" erklärt in 1-2 knappen Sätzen, WARUM die richtige Antwort richtig ist UND worin der typische Denkfehler bei den falschen Antworten besteht. Kurz und prägnant, keine langen Absätze.
-8. Alles auf Deutsch. Kein Markdown, keine Aufzählungszeichen, keine Nummerierung im Fragetext.
+8. ${langInstruction(lang)} Kein Markdown, keine Aufzählungszeichen, keine Nummerierung im Fragetext.
 9. Verrate in der Fragestellung nicht die Antwort einer anderen Frage.
 10. Variiere das FRAGEFORMAT über die Fragen hinweg deutlich (siehe FRAGEFORMATE unten) — nicht alle Fragen dürfen gleich klingen wie "Was ist die wahrscheinlichste Diagnose?". Mische direkte Wissensfragen, Fallvignetten mit neuer Zusatzinformation, "Was tun Sie als Nächstes?"-Fragen, "Welche Aussage ist FALSCH?"-Fragen, Begriffszuordnungen und Kommunikationsfragen.
 
@@ -138,6 +139,7 @@ export async function POST(req) {
   if (!payload || !payload.diagnosis) {
     return Response.json({ error: 'Es wurde keine Diagnose übergeben.' }, { status: 400 });
   }
+  const lang = safeLang(payload.lang);
   payload = {
     caseName: String(payload.caseName || '').slice(0, 160),
     meta: String(payload.meta || '').slice(0, 500),
@@ -156,7 +158,7 @@ export async function POST(req) {
   function makeBody(topics, count){
     return {
       contents: [{ role: 'user', parts: [{ text: buildPrompt(payload, topics, count) }] }],
-      systemInstruction: { parts: [{ text: buildSystem(count) }] },
+      systemInstruction: { parts: [{ text: buildSystem(count, lang) }] },
       generationConfig: {
         maxOutputTokens: 8500,
         temperature: 1.0,          // har urinishda boshqa savollar chiqsin

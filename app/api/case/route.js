@@ -10,6 +10,7 @@
 
 import { callGemini, geminiMessage } from '@/lib/gemini';
 import { guard } from '@/lib/apiGuard';
+import { safeLang, langInstruction, LANGUAGE_NAMES } from '@/lib/langPrompt';
 
 import { verifiedFindings } from '@/lib/findings';
 
@@ -22,7 +23,10 @@ const LEVEL_BRIEF = {
   pro: 'Expertenniveau. Nicht-odontogene Ursache oder Hochrisikopatient mit klinischer Falle. Mindestens 9 gezielte Fragen aus Schmerz-, Allgemein-, Medikamenten-, Risiko- und Sozialanamnese sind nötig.'
 };
 
-function buildSystem(){
+function buildSystem(lang){
+  const patientLine = lang === 'de'
+    ? 'Antworte NUR auf Deutsch, einfache Umgangssprache, kurze Antworten (1-3 Sätze), Details nur auf Nachfrage.'
+    : `Antworte NUR auf ${LANGUAGE_NAMES[lang]} (nicht auf Deutsch), einfache Umgangssprache, kurze Antworten (1-3 Sätze), Details nur auf Nachfrage.`;
   return `Du entwickelst Prüfungsfälle für die Fachsprachprüfung (FSP) Zahnmedizin in Deutschland.
 
 Du bekommst einen RÖNTGENBEFUND vorgegeben. Deine Aufgabe ist es, einen Patienten zu erfinden, dessen Beschwerden GENAU zu diesem Röntgenbefund passen.
@@ -40,9 +44,9 @@ DER PATIENT ("system"-Feld) — das ist eine Rollenanweisung für ein Sprachmode
 - Das Gespräch muss 15-20 Arztfragen konsistent aushalten. Gib pro Antwort höchstens einen neuen klinischen Hinweis preis.
 - Formuliere 2-3 realistische Rückfragen oder Sorgen, die der Patient erst nach Diagnose oder Therapieempfehlung stellen kann.
 - Eine Persönlichkeit: ängstlich, ungeduldig, bagatellisierend, gesprächig, misstrauisch, dankbar — verschieden pro Fall.
-- Endet mit: "Antworte NUR auf Deutsch, einfache Umgangssprache, kurze Antworten (1-3 Sätze), Details nur auf Nachfrage."
+- Endet mit: "${patientLine}"
 
-STIL: Alles auf Deutsch. Kein Markdown. "avatar" ist EIN Großbuchstabe (Anfangsbuchstabe des Nachnamens). "meta" sind 2-4 Wörter Laiensprache, z. B. "Schmerzen unten links".`;
+STIL: Die Felder "name", "meta", "opener", "imageCaption" und "imageContent" (was der Kandidat liest) sowie die Rollenbeschreibung im "system"-Feld: ${langInstruction(lang)} Kein Markdown. "avatar" ist EIN Großbuchstabe (Anfangsbuchstabe des Nachnamens). "meta" sind 2-4 Wörter Laiensprache, z. B. "Schmerzen unten links". Der deutsche Name des Patienten bleibt aber ein echter deutscher Name (Namen werden nicht übersetzt).`;
 }
 
 function buildPrompt(finding, difficulty, hint, exclude){
@@ -88,6 +92,7 @@ export async function POST(req) {
   try { body = await req.json(); } catch (e) {}
   const difficulty = ['leicht', 'mittel', 'schwer', 'pro'].includes(body.difficulty) ? body.difficulty : 'leicht';
   const exclude = Array.isArray(body.exclude) ? body.exclude.slice(0, 20) : [];
+  const lang = safeLang(body.lang);
 
   const pool = verifiedFindings();
   if (!pool.length) {
@@ -98,7 +103,7 @@ export async function POST(req) {
 
   const payload = {
     contents: [{ role: 'user', parts: [{ text: buildPrompt(finding, difficulty, hint, exclude) }] }],
-    systemInstruction: { parts: [{ text: buildSystem() }] },
+    systemInstruction: { parts: [{ text: buildSystem(lang) }] },
     generationConfig: {
       maxOutputTokens: 3500,
       temperature: 1.1,

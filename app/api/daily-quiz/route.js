@@ -1,5 +1,6 @@
 import { guard } from '@/lib/apiGuard';
 import { callGemini, geminiMessage } from '@/lib/gemini';
+import { safeLang, langInstruction } from '@/lib/langPrompt';
 
 export const maxDuration = 60;
 
@@ -34,12 +35,13 @@ export async function POST(req) {
   if (gate.error) return Response.json({ error: gate.error }, { status: gate.status });
   const input = await req.json().catch(() => ({}));
   const focus = String(input.focus || 'Anamnese').trim().slice(0, 160);
+  const lang = safeLang(input.lang);
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return Response.json({ error: 'Der KI-Dienst ist nicht konfiguriert.' }, { status: 500 });
 
   const body = {
     contents: [{ role: 'user', parts: [{ text: `Erstelle die heutige Challenge zum Schwerpunkt: ${focus}` }] }],
-    systemInstruction: { parts: [{ text: `Du bist FSP-Prüfer für Zahnmedizin. Erstelle genau 5 abwechslungsreiche Multiple-Choice-Fragen für eine 10-minütige Tagesübung. Jede Frage hat genau vier unterschiedliche Antworten und nur eine eindeutige richtige Antwort. Die Erklärung soll den Denkweg in höchstens zwei Sätzen zeigen. Alles auf Deutsch.` }] },
+    systemInstruction: { parts: [{ text: `Du bist FSP-Prüfer für Zahnmedizin. Erstelle genau 5 abwechslungsreiche Multiple-Choice-Fragen für eine 10-minütige Tagesübung. Jede Frage hat genau vier unterschiedliche Antworten und nur eine eindeutige richtige Antwort. Die Erklärung soll den Denkweg in höchstens zwei Sätzen zeigen. ${langInstruction(lang)}` }] },
     generationConfig: {
       maxOutputTokens: 4000,
       temperature: 0.9,

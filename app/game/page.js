@@ -19,6 +19,27 @@ import {
   unlockAudio, hasSpeechRecognition, hasRecorder, startRecording, transcribeAudio
 } from '@/lib/voice';
 import Quiz from './Quiz';
+import { useLang } from '@/lib/LanguageContext';
+import { langInstruction } from '@/lib/langPrompt';
+import { translateText } from '@/lib/translate';
+
+const SR_LOCALES = { de: 'de-DE', uz: 'uz-UZ', ru: 'ru-RU', en: 'en-US', tr: 'tr-TR', ar: 'ar-SA' };
+const IMAGE_WORDS = {
+  de: /(röntgenbild|roentgenbild|\bfoto\b|\bbild\b)/, uz: /(rentgen|rasm|surat)/, ru: /(рентген|снимок|фото|изображение)/,
+  en: /(x-?ray|\bphoto\b|\bimage\b|\bpicture\b)/, tr: /(röntgen|foto|resim|görüntü)/, ar: /(أشعة|صورة)/
+};
+const IMAGE_VERBS = {
+  de: /(schick|zeig|geben sie|haben sie|können sie)/, uz: /(yubor|ko'rsat|bera olasiz)/, ru: /(пришл|покаж|отправ|можете)/,
+  en: /(send|show|could you|can you)/, tr: /(gönder|göster|verebilir)/, ar: /(أرسل|أظهر|هل يمكن)/
+};
+const DIAG_PREFIX = {
+  de: /(meine diagnose ist|meine diagnose lautet|ich diagnostiziere|meine einschätzung ist)\s*(.*)/,
+  uz: /(mening tashxisim|tashxisim shu)\s*[:\-]?\s*(.*)/,
+  ru: /(мой диагноз|я диагностирую)\s*[:\-]?\s*(.*)/,
+  en: /(my diagnosis is|i diagnose)\s*(.*)/,
+  tr: /(teşhisim|tanım şu)\s*[:\-]?\s*(.*)/,
+  ar: /(تشخيصي هو|تشخيصي)\s*[:\-]?\s*(.*)/
+};
 
 // Befund rasmi: agar holatga Commons fayli biriktirilgan bo'lsa, uni jonli olib keladi
 // (atribut bilan — CC litsenziyasi talabi). Aks holda sxematik SVG chizma ko'rsatiladi.
@@ -62,6 +83,7 @@ function CaseImage({ imageKey, commonsFile }) {
 
 export default function Game() {
   const router = useRouter();
+  const { t, lang } = useLang();
   const [profile, setProfile] = useState(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
 
@@ -109,7 +131,7 @@ export default function Game() {
   // Har renderda eng so'nggi qiymatlarni ref'ga yozamiz — SpeechRecognition callback'lari
   // "eskirgan" (stale) state bilan ishlamasligi uchun.
   useEffect(() => {
-    stateRef.current = { history, currentCase, currentDiff, profile, diagInput };
+    stateRef.current = { history, currentCase, currentDiff, profile, diagInput, lang };
   });
 
   // Mikrofon (nutqni tanish) ni bir marta sozlaymiz
@@ -122,7 +144,7 @@ export default function Game() {
     setVoiceMode('sr');
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     const rec = new SR();
-    rec.lang = 'de-DE';
+    rec.lang = SR_LOCALES[lang] || 'de-DE';
     rec.interimResults = false;
     rec.maxAlternatives = 1;
     rec.continuous = false;
@@ -143,7 +165,7 @@ export default function Game() {
     };
     recognitionRef.current = rec;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [lang]);
 
   useEffect(() => {
     let mounted = true;
@@ -197,12 +219,12 @@ export default function Game() {
         const payload = await r.stop();
         const text = await transcribeAudio(payload);
         setTranscribing(false);
-        if (!text) { setVoiceError('Nichts verstanden — bitte noch einmal sprechen.'); return; }
+        if (!text) { setVoiceError(t('voiceNothingHeard')); return; }
         busyRef.current = true;
         await handleVoiceTurn(text);
       } catch (e) {
         setTranscribing(false);
-        setVoiceError('Spracherkennung fehlgeschlagen. Bitte erneut versuchen.');
+        setVoiceError(t('voiceRecognitionFailed'));
       }
       return;
     }
@@ -213,7 +235,7 @@ export default function Game() {
       recorderRef.current = await startRecording();
       setRecording(true);
     } catch (e) {
-      setVoiceError('Kein Mikrofonzugriff. Bitte in den Einstellungen erlauben.');
+      setVoiceError(t('voiceNoMic'));
     }
   }
 
@@ -244,7 +266,7 @@ export default function Game() {
   }
 
   // Istalgan holatni (qo'lda yozilgan yoki AI yaratgan) boshlaydi
-  function beginCase(c){
+  async function beginCase(c){
     diagnosisAttemptRef.current = newAttemptId();
     setShowQuiz(false);
     setEvalResult(null);
@@ -257,10 +279,14 @@ export default function Game() {
     caseVoiceRef.current = pickVoice();
     stopSpeaking();
     if (!c) return;
-    setHistory([{ role: 'assistant', content: c.opener }]);
+    // AI tomonidan yaratilgan holatlar allaqachon tanlangan tilda keladi (server
+    // buni to'g'ridan-to'g'ri o'sha tilda yozadi) — faqat oldindan yozilgan (nemis
+    // tilidagi) holatlar uchun ochilish gapini tarjima qilamiz.
+    const opener = c.generated ? c.opener : await translateText(c.opener, stateRef.current.lang || 'de');
+    setHistory([{ role: 'assistant', content: opener }]);
     if (activeRef.current) {
       busyRef.current = true;
-      speak(c.opener).then(() => {
+      speak(opener).then(() => {
         busyRef.current = false;
         if (activeRef.current) restartListening();
       });
@@ -282,10 +308,11 @@ export default function Game() {
     try {
       const res = await apiRawPost('/api/case', {
           difficulty: currentDiff,
-          exclude: CASES.filter(c => c.difficulty === currentDiff).map(c => c.name)
+          exclude: CASES.filter(c => c.difficulty === currentDiff).map(c => c.name),
+          lang
       });
       const d = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(d.error || 'Fall konnte nicht erstellt werden');
+      if (!res.ok) throw new Error(d.error || t('connectionError'));
       setAiCase(d.case);
       beginCase(d.case);
     } catch (e) {
@@ -302,27 +329,29 @@ export default function Game() {
   }
 
   // ---- Ovozli navbatni boshqarish: niyatni aniqlaydi (savol / rasm / tashxis) ----
-  function detectIntent(text){
+  function detectIntent(text, curLang){
     const lower = text.toLowerCase();
-    const wantsImage = /(röntgenbild|roentgenbild|\bfoto\b|\bbild\b)/.test(lower)
-      && /(schick|zeig|geben sie|haben sie|können sie)/.test(lower);
+    const wordsRe = IMAGE_WORDS[curLang] || IMAGE_WORDS.de;
+    const verbsRe = IMAGE_VERBS[curLang] || IMAGE_VERBS.de;
+    const wantsImage = wordsRe.test(lower) && verbsRe.test(lower);
     if (wantsImage) return 'image';
 
-    const diagMatch = lower.match(/(meine diagnose ist|meine diagnose lautet|ich diagnostiziere|meine einschätzung ist)\s*(.*)/);
+    const diagRe = DIAG_PREFIX[curLang] || DIAG_PREFIX.de;
+    const diagMatch = lower.match(diagRe);
     if (diagMatch) return { type: 'diagnosis', text: diagMatch[2] || text };
 
     return { type: 'question' };
   }
 
   async function handleVoiceTurn(transcript){
-    const { currentCase: c } = stateRef.current;
+    const { currentCase: c, lang: curLang } = stateRef.current;
     if (!c || !transcript.trim()) { busyRef.current = false; if (activeRef.current) restartListening(); return; }
 
-    const intent = detectIntent(transcript);
+    const intent = detectIntent(transcript, curLang);
 
     if (intent === 'image') {
-      doRequestImage();
-      await speak(c.imageCaption);
+      const caption = await doRequestImage();
+      await speak(caption || c.imageCaption);
     } else if (intent.type === 'diagnosis') {
       const diagText = (intent.text || transcript).trim();
       setDiagInput(diagText);
@@ -336,20 +365,24 @@ export default function Game() {
     if (activeRef.current) restartListening();
   }
 
-  function doRequestImage(){
+  async function doRequestImage(){
     const c = stateRef.current.currentCase;
     if (!c) return;
+    const curLang = stateRef.current.lang || 'de';
+    const askText = t(c.imageLabel === 'Foto' ? 'askSendPhoto' : 'askSendXray');
+    const caption = c.generated ? c.imageCaption : await translateText(c.imageCaption, curLang);
     setHistory(h => [
       ...h,
-      { role: 'user', content: `Könnten Sie mir bitte ${c.imageLabel === 'Foto' ? 'ein Foto' : 'ein Röntgenbild'} schicken?` },
-      { role: 'assistant', type: 'image', imageKey: c.imageKey, commonsFile: c.commonsFile, displayCaption: c.imageCaption, content: c.imageContent }
+      { role: 'user', content: askText },
+      { role: 'assistant', type: 'image', imageKey: c.imageKey, commonsFile: c.commonsFile, displayCaption: caption, content: c.imageContent }
     ]);
+    return caption;
   }
 
-  function requestImage(){
+  async function requestImage(){
     // qo'lda (tugma) bosilganda
-    doRequestImage();
-    if (activeRef.current) speak(stateRef.current.currentCase.imageCaption);
+    const caption = await doRequestImage();
+    if (activeRef.current) speak(caption || stateRef.current.currentCase.imageCaption);
   }
 
   async function sendMsg(voiceText){
@@ -362,7 +395,10 @@ export default function Game() {
     setHistory(newHistory);
     setSending(true);
     try {
-      const reply = await callGemini(newHistory, c.system + COMMON_PATIENT_INSTRUCTIONS, 300);
+      const curLang = stateRef.current.lang || 'de';
+      const sys = c.generated ? c.system + COMMON_PATIENT_INSTRUCTIONS
+        : c.system + COMMON_PATIENT_INSTRUCTIONS + (curLang !== 'de' ? `\n\nWICHTIG: Ignoriere jede Sprachanweisung oben. ${langInstruction(curLang)}` : '');
+      const reply = await callGemini(newHistory, sys, 300);
       setHistory(h => [...h, { role: 'assistant', content: reply || '...' }]);
       if (activeRef.current && reply) await speak(reply);
     } catch (e) {
@@ -378,9 +414,12 @@ export default function Game() {
     if (!diagnosisText || !diagnosisText.trim() || !c) return;
     const doctorQuestions = hist.filter(message => message.role === 'user').length;
     const requiredQuestions = { leicht: 3, mittel: 5, schwer: 7, pro: 9 }[stateRef.current.currentDiff] || 3;
+    const curLang = stateRef.current.lang || 'de';
     if (doctorQuestions < requiredQuestions) {
       const missing = requiredQuestions - doctorQuestions;
-      const hint = `Die Anamnese ist noch nicht vollständig. Stellen Sie mindestens ${missing} weitere gezielte ${missing === 1 ? 'Frage' : 'Fragen'}, bevor Sie die Diagnose abgeben.`;
+      const hint = curLang === 'de'
+        ? `Die Anamnese ist noch nicht vollständig. Stellen Sie mindestens ${missing} weitere gezielte ${missing === 1 ? 'Frage' : 'Fragen'}, bevor Sie die Diagnose abgeben.`
+        : await translateText(`Die Anamnese ist noch nicht vollständig. Stellen Sie mindestens ${missing} weitere gezielte Fragen, bevor Sie die Diagnose abgeben.`, curLang);
       if (activeRef.current) await speak(hint);
       setAnamneseHint(hint);
       return;
@@ -390,11 +429,12 @@ export default function Game() {
     setEvalLoading(true);
     setEvalResult(null);
     const transcript = hist.map(m => (m.role === 'user' ? 'Arzt/Ärztin: ' : 'Patient/in: ') + m.content).join('\n');
-    const sys = `Du bist ein erfahrener FSP-Prüfer für Zahnmedizin. Dir liegt die KORREKTE DIAGNOSE für diesen Fall vor: "${c.diagnosis}". Der/die Prüfungskandidat/in hat als eigene Diagnose eingetragen: "${diagnosisText.trim()}". Bewerte auf Deutsch, in klaren Absätzen ohne Markdown:
-1. Beginne mit genau einem Wort in Großbuchstaben als erste Zeile: RICHTIG, TEILWEISE oder FALSCH.
-2. Dann ein bis zwei Sätze, die die korrekte Diagnose nennen und kurz begründen.
-3. Dann: welche wichtigen Anamnesefragen gefehlt haben (2-3 Punkte).
-4. Dann: 1-2 konkrete sprachliche Korrekturen, falls vorhanden.`;
+    const sys = `Du bist ein erfahrener FSP-Prüfer für Zahnmedizin. Dir liegt die KORREKTE DIAGNOSE für diesen Fall vor: "${c.diagnosis}". Der/die Prüfungskandidat/in hat als eigene Diagnose eingetragen: "${diagnosisText.trim()}". Bewerte in klaren Absätzen ohne Markdown:
+1. Beginne mit genau einem Wort AUF DEUTSCH in Großbuchstaben als erste Zeile (unabhängig von der sonstigen Antwortsprache, dies wird vom Code ausgewertet): RICHTIG, TEILWEISE oder FALSCH.
+2. Ab der zweiten Zeile: ${langInstruction(curLang)}
+3. Ein bis zwei Sätze, die die korrekte Diagnose nennen und kurz begründen.
+4. Dann: welche wichtigen Anamnesefragen gefehlt haben (2-3 Punkte).
+5. Dann: 1-2 konkrete sprachliche Korrekturen, falls vorhanden.`;
 
     try {
       const text = await callGemini([{ role: 'user', content: transcript }], sys, 550);
@@ -423,13 +463,13 @@ export default function Game() {
       if (verdict === 'richtig') { playCorrect(); burstConfetti(); } else if (verdict === 'falsch') { playWrong(); }
 
       if (activeRef.current) {
-        const verdictLine = verdict === 'richtig' ? 'Ihre Diagnose ist richtig.'
-          : verdict === 'falsch' ? 'Ihre Diagnose ist leider nicht korrekt.'
-          : 'Ihre Diagnose ist teilweise richtig.';
-        await speak(verdictLine + ' ' + rest);
+        const verdictLine = verdict === 'richtig' ? t('diagRight')
+          : verdict === 'falsch' ? t('diagWrong')
+          : t('diagPartial');
+        await speak(verdictLine + '. ' + rest);
       }
     } catch (e) {
-      setEvalResult({ verdict: 'falsch', text: 'Auswertung konnte nicht geladen werden. Bitte erneut versuchen.', reward: null });
+      setEvalResult({ verdict: 'falsch', text: t('connectionError'), reward: null });
       setEvalLoading(false);
     }
   }
@@ -533,7 +573,7 @@ export default function Game() {
               data-d={d}
               onClick={() => setCurrentDiff(d)}
             >
-              {d.charAt(0).toUpperCase() + d.slice(1)}
+              {t('diff' + d.charAt(0).toUpperCase() + d.slice(1))}
             </button>
           ))}
         </div>
@@ -554,11 +594,11 @@ export default function Game() {
               </div>
               <div className="case-actions">
                 <button className="next-case-btn" onClick={newCase} title="Geprüfter Fall aus dieser Stufe">
-                  Nächster Patient →
+                  {t('nextPatient')}
                 </button>
                 <button className="next-case-btn ai" onClick={generateCase} disabled={aiLoading}
                         title="Neuer, noch nie dagewesener Fall — passend zu einem geprüften Röntgenbefund">
-                  {aiLoading ? 'Fall wird erstellt…' : '✨ Neuer Fall'}
+                  {aiLoading ? t('caseCreating') : t('newCase')}
                 </button>
               </div>
             </div>
@@ -579,7 +619,7 @@ export default function Game() {
             {voiceMode !== 'none' && (
               <div className="voice-bar">
                 <button className={'voice-toggle' + (voiceActive ? ' on' : '')} onClick={toggleVoiceMode}>
-                  {voiceActive ? '🎙️ Sprachgespräch: Aktiv' : '🎙️ Sprachgespräch starten'}
+                  {voiceActive ? t('voiceActive') : t('voiceStart')}
                 </button>
 
                 {voiceActive && voiceMode === 'ptt' && (
@@ -588,22 +628,20 @@ export default function Game() {
                     onClick={toggleRecording}
                     disabled={transcribing || speaking}
                   >
-                    {recording ? '⏹ Fertig' : '🎤 Sprechen'}
+                    {recording ? t('talkDone') : t('talkSpeak')}
                   </button>
                 )}
 
-                {speaking && <span className="voice-status">Patient spricht…</span>}
-                {recording && <span className="voice-status listening">● Aufnahme läuft…</span>}
-                {transcribing && <span className="voice-status">Wird verstanden…</span>}
-                {listening && <span className="voice-status listening">● Ich höre zu…</span>}
-                {voiceActive && voiceMode === 'sr' && !speaking && !listening && <span className="voice-status">Einen Moment…</span>}
+                {speaking && <span className="voice-status">{t('patientSpeaking')}</span>}
+                {recording && <span className="voice-status listening">● {t('recording')}</span>}
+                {transcribing && <span className="voice-status">{t('transcribing')}</span>}
+                {listening && <span className="voice-status listening">● {t('listening')}</span>}
+                {voiceActive && voiceMode === 'sr' && !speaking && !listening && <span className="voice-status">{t('oneMoment')}</span>}
               </div>
             )}
             {voiceActive && (
               <div className="voice-hint">
-                {voiceMode === 'ptt'
-                  ? 'Tippen Sie auf „Sprechen", sprechen Sie auf Deutsch, und tippen Sie danach auf „Fertig". Z. B. „Können Sie mir ein Röntgenbild schicken?" oder „Meine Diagnose ist …"'
-                  : 'Sagen Sie z. B. „Können Sie mir ein Röntgenbild schicken?" oder „Meine Diagnose ist …" — das Gespräch läuft ohne Tastendruck weiter.'}
+                {voiceMode === 'ptt' ? t('voiceHintPtt') : t('voiceHintSr')}
                 {voiceError && <span className="error-text" style={{ display: 'block', marginTop: 6 }}>{voiceError}</span>}
               </div>
             )}
@@ -631,33 +669,33 @@ export default function Game() {
 
             <div className="cf-input">
               <input
-                placeholder={voiceActive ? "Sprachmodus aktiv — oder hier tippen…" : "Stellen Sie Ihre Frage auf Deutsch…"}
+                placeholder={voiceActive ? t('askPlaceholderVoice') : t('askPlaceholder')}
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') sendMsg(); }}
               />
-              <button onClick={() => sendMsg()} disabled={sending}>Senden</button>
+              <button onClick={() => sendMsg()} disabled={sending}>{t('send')}</button>
             </div>
 
             <div className="image-row">
-              <button onClick={requestImage}>{currentCase.imageLabel} anfordern</button>
-              <span className="img-hint">In der Praxis stützt sich die Diagnose meist auf ein Bild — fordern Sie es an, bevor Sie Ihre Diagnose eintragen.</span>
+              <button onClick={requestImage}>{t(currentCase.imageLabel === 'Foto' ? 'photoNoun' : 'xrayNoun')} {t('requestImage')}</button>
+              <span className="img-hint">{t('imgHint')}</span>
             </div>
 
             <div className="diag-block">
-              <label>Ihre Diagnose (Pflichtfeld für die Auswertung)</label>
+              <label>{t('yourDiagnosis')}</label>
               <div className="diag-row">
                 <input
-                  placeholder="z. B. Irreversible Pulpitis, Zahn 36"
+                  placeholder={t('diagPlaceholder')}
                   value={diagInput}
                   onChange={e => setDiagInput(e.target.value)}
                 />
-                <button onClick={getEval} disabled={evalLoading}>Auswertung anzeigen</button>
+                <button onClick={getEval} disabled={evalLoading}>{t('showEval')}</button>
               </div>
-              {diagError && <p className="error-text">Bitte tragen Sie zuerst Ihre Diagnose ein.</p>}
+              {diagError && <p className="error-text">{t('enterDiagFirst')}</p>}
               {anamneseHint && <p className="anamnese-hint">🩺 {anamneseHint}</p>}
               <button type="button" className="tooth-toggle" onClick={() => setShowTeeth(v => !v)}>
-                {showTeeth ? 'Zahnschema ausblenden' : '🦷 Zahnschema öffnen — Zahn auswählen'}
+                {showTeeth ? t('toothToggleClose') : t('toothToggleOpen')}
               </button>
               {showTeeth && (
                 <ToothChart selected={selectedTooth} onSelect={selectTooth} />
@@ -667,15 +705,15 @@ export default function Game() {
             {(evalLoading || evalResult) && (
               <div className="evalbox">
                 {evalLoading ? (
-                  <span style={{ fontStyle: 'italic', color: 'var(--muted)' }}>Auswertung wird erstellt…</span>
+                  <span style={{ fontStyle: 'italic', color: 'var(--muted)' }}>{t('evalLoading')}</span>
                 ) : (
                   <>
                     <div className={'verdict ' + evalResult.verdict}>
-                      {evalResult.verdict === 'richtig' ? 'Diagnose richtig' : evalResult.verdict === 'falsch' ? 'Diagnose falsch' : 'Diagnose teilweise richtig'}
+                      {evalResult.verdict === 'richtig' ? t('diagRight') : evalResult.verdict === 'falsch' ? t('diagWrong') : t('diagPartial')}
                     </div>
                     <div>{evalResult.text.split('\n\n').map((p, i) => <p key={i} style={{ marginBottom: 8 }}>{p}</p>)}</div>
                     {evalResult.reward && (
-                      <div className="reward-toast">+{evalResult.reward.coins} zum Praxiskonto · +{evalResult.reward.xp} Erfahrung</div>
+                      <div className="reward-toast">+{evalResult.reward.coins} {t('toAccount')} · +{evalResult.reward.xp} {t('xpUnit')}</div>
                     )}
                   </>
                 )}
@@ -685,10 +723,10 @@ export default function Game() {
             {evalResult && !evalLoading && (
               <div className="exam-cta">
                 <div className="exam-cta-text">
-                  <b>Prüfung (20 Fragen)</b>
-                  <span>Sie beantworten alle 20 Fragen. Am Ende sehen Sie Ihr Ergebnis — ab 18 richtigen Antworten haben Sie bestanden und steigen zur nächsten Stufe auf.</span>
+                  <b>{t('examTitle')}</b>
+                  <span>{t('examDesc')}</span>
                 </div>
-                <button className="quiz-btn" onClick={() => setShowQuiz(true)}>Prüfung starten</button>
+                <button className="quiz-btn" onClick={() => setShowQuiz(true)}>{t('examStart')}</button>
               </div>
             )}
             </>
