@@ -124,6 +124,7 @@ export default function Game() {
   const caseVoiceRef = useRef(pickVoice());
   const seenRef = useRef({});    // har daraja uchun allaqachon ko'rilgan holatlar
   const diagnosisAttemptRef = useRef(newAttemptId());
+  const caseGenRef = useRef(0); // har beginCase() chaqiruviga o'sib boruvchi raqam — eskirgan (tarjima kech kelgan) natijalarni e'tiborsiz qoldirish uchun
 
   const casesForDiff = CASES.filter(c => c.difficulty === currentDiff);
   const currentCase = aiCase || casesForDiff[currentCaseIdx] || casesForDiff[0];
@@ -270,6 +271,7 @@ export default function Game() {
 
   // Istalgan holatni (qo'lda yozilgan yoki AI yaratgan) boshlaydi
   async function beginCase(c){
+    const myGen = ++caseGenRef.current; // shu chaqiruvning "avlodi" — eskirsa, natija tashlab yuboriladi
     diagnosisAttemptRef.current = newAttemptId();
     setShowQuiz(false);
     setEvalResult(null);
@@ -286,6 +288,7 @@ export default function Game() {
     // buni to'g'ridan-to'g'ri o'sha tilda yozadi) — faqat oldindan yozilgan (nemis
     // tilidagi) holatlar uchun ochilish gapini tarjima qilamiz.
     const opener = c.generated ? c.opener : await translateText(c.opener, stateRef.current.lang || 'de');
+    if (caseGenRef.current !== myGen) return; // shu orada yangiroq beginCase() chaqirilgan — bu natija eskirgan
     setHistory([{ role: 'assistant', content: opener }]);
     if (activeRef.current) {
       busyRef.current = true;
