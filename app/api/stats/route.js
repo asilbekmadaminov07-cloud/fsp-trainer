@@ -3,7 +3,11 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-export const revalidate = 300; // 5 daqiqada bir marta yangilanadi, har so'rovda emas
+// MUHIM: `revalidate` export QILMAYMIZ — u bu route'ni statik (ISR) qilib
+// qo'yadi, build paytidagi bitta natijani "qotirib" qo'yishi mumkin (bu aynan
+// sodir bo'lgan edi: 0/0 natija keshlanib qolgan). Har so'rovda haqiqiy sonni
+// olish uchun route dinamik bo'lishi kerak.
+export const dynamic = 'force-dynamic';
 
 export async function GET(){
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -19,5 +23,8 @@ export async function GET(){
     admin.from('profiles').select('id', { count: 'exact', head: true })
   ]);
 
-  return Response.json({ sessions: sessions || 0, users: users || 0 });
+  return Response.json(
+    { sessions: sessions || 0, users: users || 0 },
+    { headers: { 'Cache-Control': 's-maxage=300, stale-while-revalidate=600' } }
+  );
 }
